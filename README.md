@@ -1,6 +1,6 @@
 <div align="center">
 
-# Xiaomi Vacuum S20 Integration and Card for Home Assistant | m1xminus  <a href="https://www.buymeacoffee.com/m1xminus" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" style="height: 30px !important;width: 117px !important;" ></a>
+# Xiaomi Vacuum S20 Integration and Card for Home Assistant   m1xminus  <a href="https://www.buymeacoffee.com/m1xminus" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" style="height: 30px !important;width: 117px !important;" ></a>
 
 **Live maps, room cleaning, local control, enhanced sensors, and custom presets tailored specifically for the Xiaomi Robot Vacuum S20 (`xiaomi.vacuum.d106gl`).**
 

@@ -1,13 +1,13 @@
 {
   "domain": "xiaomi_vac",
   "name": "Xiaomi Vacuum",
-  "codeowners": ["@letitbe-dull"],
+  "codeowners": ["@m1xminus"],
   "config_flow": true,
   "dependencies": ["http", "lovelace"],
-  "documentation": "https://github.com/letitbe-dull/xiaomi-vac",
+  "documentation": "https://github.com/m1xminus/xiaomi-vac-S20",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/letitbe-dull/xiaomi-vac/issues",
+  "issue_tracker": "https://github.com/m1xminus/xiaomi-vac-S20/issues",
   "requirements": [
     "python-miio==0.5.12",
     "vacuum-map-parser-ijai==0.1.1",

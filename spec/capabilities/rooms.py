@@ -1,2 +1,0 @@
-"""Room clean capability helpers."""
-

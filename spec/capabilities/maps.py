@@ -1,2 +1,0 @@
-"""Map capability helpers."""
-

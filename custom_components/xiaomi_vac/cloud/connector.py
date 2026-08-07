@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import hmac
 import json
 import logging
 import os
@@ -415,43 +416,94 @@ class XiaomiCloud:
         body = {"params": {"did": str(did), "siid": siid, "aiid": aiid, "in": list(in_params)}}
         return self._call(url, {"data": json.dumps(body)})
 
+    def _plain_signed_nonce(self) -> tuple[str, str]:
+        """8 random bytes + 4 bytes of minutes-since-epoch, base64; and its
+        HMAC key (sha256 of ssecurity+nonce) — same nonce scheme as _call's
+        RC4 path (_signed_nonce), just returned for reuse without RC4."""
+        nonce = base64.b64encode(os.urandom(8) + int(time.time() / 60).to_bytes(4, "big")).decode()
+        return nonce, self._signed_nonce(nonce)
+
+    def _call_plain(self, path: str, server: str, body: dict) -> dict | None:
+        """Plain (non-RC4-encrypted) signed call — confirmed working against
+        real ijai hardware for at least one action (set-preference-ii, siid 7
+        aiid 9) where the RC4-encrypted _call() path was rejected by the
+        device with an action-specific error even though the request reached
+        it fine (outer HTTP/transport code 0). Mirrors a proven-working
+        reference implementation exactly: plain HMAC-SHA256 signature over
+        the JSON body, no per-field RC4 encryption, classic Mi Home app
+        User-Agent. Kept as a separate, deliberately narrow method — swap
+        specific calls to this only when the RC4 path is confirmed rejected
+        for them, rather than replacing _call() everywhere and risking
+        regressing the (already working) map/room-clean/prop-get calls.
+        """
+        url = self._api_url(server) + path
+        nonce, signed_nonce = self._plain_signed_nonce()
+        data = json.dumps(body, separators=(",", ":"))
+        sign_str = "&".join([path, signed_nonce, nonce, "data=" + data])
+        signature = base64.b64encode(
+            hmac.new(
+                key=base64.b64decode(signed_nonce), msg=sign_str.encode(), digestmod=hashlib.sha256
+            ).digest()
+        ).decode()
+        headers = {
+            "User-Agent": "APP/com.xiaomi.mihome APPV/6.0.103 ios498 iPhone/14.4 CFNetwork/1220.1 Darwin/20.3.0",
+            "x-xiaomi-protocal-flag-cli": "PROTOCAL-HTTP2",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cookie": (
+                f"userId={self.user_id};yetAnotherServiceToken={self.service_token};"
+                f"serviceToken={self.service_token};locale=en_GB;timezone=GMT+01:00;"
+                f"is_daylight=0;dst_offset=0;channel=MI_APP_STORE;deviceId={self._device_id}"
+            ),
+        }
+        post_data = {"_nonce": nonce, "data": data, "signature": signature}
+        r = self._s.post(url, headers=headers, data=post_data, timeout=10)
+        if r.status_code != 200:
+            return None
+        try:
+            return r.json()
+        except ValueError:
+            return None
+
+    def cloud_action_plain(self, server: str, did: str, siid: int, aiid: int, in_params: list):
+        """cloud_action, but via _call_plain — see its docstring."""
+        body = {"params": {"did": str(did), "siid": siid, "aiid": aiid, "in": list(in_params)}}
+        return self._call_plain("/miotspec/action", server, body)
+
     def cloud_get_prop(self, server: str, did: str, siid: int, piid: int):
         url = self._api_url(server) + "/miotspec/prop/get"
         body = {"params": [{"did": str(did), "siid": siid, "piid": piid}]}
         return self._call(url, {"data": json.dumps(body)})
 
+    def cloud_get_prop_plain(self, server: str, did: str, siid: int, piid: int):
+        """cloud_get_prop, but via _call_plain — same rationale as
+        cloud_action_plain: this account/device has been confirmed to reject
+        at least one RC4-signed call outright, so anywhere a plain-signed
+        result feeding into a room-clean decision (like the current map id)
+        could be silently wrong is worth making equally safe."""
+        body = {"params": [{"did": str(did), "siid": siid, "piid": piid}]}
+        return self._call_plain("/miotspec/prop/get", server, body)
+
     def map_url(self, server: str, did: str, map_name: str = "0",
                 endpoint: str = "get_interim_file_url_pro") -> str | None:
-        """Mint a signed download URL for one map object.
-
-        Tries the alternate endpoint (get_interim_file_url vs. _pro) on ANY
-        failure, not just code -8 — some brands (observed live: 3irobotic-
-        manufactured xiaomi.* models like ov42gl) reject the "wrong" endpoint
-        for their account with other codes too (e.g. -6 "invalid config for
-        fds"), and there's no complete list of which codes mean "wrong
-        endpoint" vs. an actual dead object/session. Always trying both is
-        more robust than chasing individual error codes.
-        """
         obj = f"{self.user_id}/{did}/{map_name}"
-        resp = self._try_map_url(server, obj, endpoint)
-        if resp is not None:
-            return resp
-
-        alt = ("get_interim_file_url" if endpoint == "get_interim_file_url_pro"
-               else "get_interim_file_url_pro")
-        alt_resp = self._try_map_url(server, obj, alt)
-        if alt_resp is not None:
-            _LOGGER.debug("map_url: %s failed, succeeded with %s", endpoint, alt)
-            return alt_resp
-        return None
-
-    def _try_map_url(self, server: str, obj_name: str, endpoint: str) -> str | None:
         resp = self._call(self._api_url(server) + f"/v2/home/{endpoint}",
-                          {"data": f'{{"obj_name":"{obj_name}"}}'})
+                          {"data": f'{{"obj_name":"{obj}"}}'})
         try:
             return resp["result"]["url"]
         except (TypeError, KeyError):
-            return None
+            pass
+        if isinstance(resp, dict) and resp.get("code") == -8:
+            alt = ("get_interim_file_url" if endpoint == "get_interim_file_url_pro"
+                   else "get_interim_file_url_pro")
+            resp2 = self._call(self._api_url(server) + f"/v2/home/{alt}",
+                               {"data": f'{{"obj_name":"{obj}"}}'})
+            try:
+                url = resp2["result"]["url"]
+                _LOGGER.debug("map_url: %s rejected (code -8), succeeded with %s", endpoint, alt)
+                return url
+            except (TypeError, KeyError):
+                pass
+        return None
 
     def download(self, url: str) -> bytes | None:
         r = self._s.get(url, timeout=15)

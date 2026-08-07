@@ -112,6 +112,15 @@ class XiaomiMapCoordinator(DataUpdateCoordinator[MapResult]):
         self._last_live_at: float | None = None
         self._refresh_map_lock = asyncio.Lock()
         self._pending_entry_updates: dict[str, str] = {}
+        # Tracks the vacuum's activity as of the LAST chosen-rooms check, so
+        # the auto-clear-when-finished logic can require an actual transition
+        # into docked+charged (from cleaning/returning/paused) rather than
+        # just the current level — "docked + charged + still chosen" is
+        # ALSO true for the first several seconds after starting a brand
+        # new room clean (before the vacuum's status has caught up to
+        # "cleaning" yet), so checking the level alone was wiping out a
+        # selection that had just been made, not one that had just finished.
+        self._prev_activity_for_chosen_clear: str | None = None
 
     @property
     def device(self) -> IjaiVacuumDevice:
@@ -305,6 +314,21 @@ class XiaomiMapCoordinator(DataUpdateCoordinator[MapResult]):
         brand = parser_key(self._device.profile)
         required = required_map_key_inputs(brand)
 
+        # NOTE: earlier we aliased this to the profile's canonical model
+        # (e.g. c101eu) to fix a hex-key-type whitelist lookup miss for
+        # d106gl. That was wrong: the model string isn't just a whitelist
+        # lookup key, it's baked directly into the AES key material itself
+        # (vacuum_map_parser_ijai's md5key() uses model.split('.')[-1] as
+        # literal key bytes). Aliasing it produced a permanently wrong key
+        # regardless of hex/non-hex choice. Confirmed against a working
+        # third-party decode of the same d106gl hardware (PiotrMachowski/
+        # Home-Assistant-custom-components-Xiaomi-Cloud-Map-Extractor#708):
+        # the RAW device model is what the firmware actually expects here.
+        # ijai_decrypt_try_variants (map_parsers.py) already tries both
+        # hex and non-hex key types against whatever model we hand it, so
+        # there's no whitelist problem left to route around.
+        key_model = d[CONF_MODEL]
+
         cap = self._device.profile.map
         self._has_map_list = isinstance(cap, MapCapability) and cap.get_map_list is not None
 
@@ -337,15 +361,30 @@ class XiaomiMapCoordinator(DataUpdateCoordinator[MapResult]):
                 "Missing map key input mac: could not read it live or from storage"
             )
 
+        # Some models expose a live map-encrypt toggle (MapCapability.map_encrypt,
+        # siid 7/piid 55). If the device reports encryption is OFF, the cloud
+        # blob was never AES-encrypted in the first place — running it through
+        # the ijai decrypt path anyway produces garbage and a 100%-reproducible
+        # "Padding is incorrect", indistinguishable from a genuine wrong-key
+        # failure. None means "unknown" (unsupported prop or a failed read):
+        # keep the historical always-decrypt behaviour in that case.
+        map_encrypted = True
+        if brand == "ijai":
+            live_encrypted = self._device.get_map_encrypt_enabled()
+            if live_encrypted is not None:
+                map_encrypted = live_encrypted
+                _LOGGER.debug("Map encryption toggle read live: encrypted=%s", map_encrypted)
+
         return MapFetcher(
             cloud,
             server=d[CONF_SERVER],
             user_id=d[CONF_USER_ID],
             device_id=d[CONF_DEVICE_ID],
-            model=d[CONF_MODEL],
+            model=key_model,
             mac=mac,
             wifi_sn=wifi_sn,
             parser_brand=brand,
+            encrypted=map_encrypted,
         )
 
     def _persist_pending_entry_updates(self) -> None:
@@ -367,26 +406,10 @@ class XiaomiMapCoordinator(DataUpdateCoordinator[MapResult]):
     def _fetch_slots(self) -> list[MapResult | None]:
         """Blocking: try every cloud slot for the active map this cycle.
 
-        Each slot's SessionExpired is caught independently instead of
-        short-circuiting the rest of the list: the object backing one slot
-        (e.g. Map Obj Name) can be permanently unavailable server-side while
-        a different object for the same device (e.g. Trajectory Obj Name)
-        still resolves fine — that's not a dead session, just a dead object.
-        SessionExpired is only re-raised when EVERY slot came back with no
-        URL, since that's the actual "whole session is dead" signal the
-        coordinator's refresh/reauth handling wants.
+        A raised SessionExpired from an earlier slot short-circuits the rest —
+        the whole session is dead, not just this slot's blob.
         """
-        results: list[MapResult | None] = []
-        any_resolved = False
-        for slot in _SLOTS:
-            try:
-                results.append(self._fetcher.fetch(slot))
-                any_resolved = True
-            except SessionExpired:
-                results.append(None)
-        if not any_resolved:
-            raise SessionExpired()
-        return results
+        return [self._fetcher.fetch(slot) for slot in _SLOTS]
 
     def _resolve_active_id(
         self, active_meta: dict | None, decoded: list[MapResult], maps_meta: list[dict],
@@ -449,6 +472,110 @@ class XiaomiMapCoordinator(DataUpdateCoordinator[MapResult]):
         ]
         return served
 
+    async def _apply_chosen_rooms(self, result: MapResult, map_id: int | None) -> None:
+        """Best-effort: merge the device's live "chosen" room state into
+        each map's room list as a `chosen` bool, so the card can show a
+        PERSISTENT selection highlight sourced from the device itself —
+        not from any card-local memory, which doesn't survive a browser
+        refresh or an HA restart (confirmed the hard way: that's exactly
+        why the resume button needed fixing earlier). Piggybacks on this
+        coordinator's own poll cadence rather than adding a new one; never
+        lets a failure here break map serving — the card just doesn't get
+        an updated chosen flag this cycle and gets one next cycle.
+        """
+        try:
+            from .vacuum import _cloud_get_room_preferences, _has_cloud_session
+            data = self.entry.data
+            if map_id is not None and _has_cloud_session(data):
+                prefs = await self.hass.async_add_executor_job(
+                    _cloud_get_room_preferences, data, self._device, map_id
+                )
+            else:
+                prefs = await self.hass.async_add_executor_job(
+                    self._device.get_room_preferences, map_id
+                )
+            chosen_ids = {int(p["room_id"]) for p in prefs if str(p.get("choose")) == "1"}
+            _LOGGER.debug("%s: card chosen-rooms merge — currently chosen: %s", self._device.model, sorted(chosen_ids))
+            # DISABLED — this was the only automatic, unprompted background
+            # write to the device anywhere in this integration (it ran on
+            # this coordinator's own timer, independent of anything the
+            # person did), and it started right around when room-specific
+            # cleans started going to the wrong room and triggering the
+            # device into a full re-scan. Never fully confirmed as the
+            # cause, but it's the one piece of code with a genuinely
+            # different risk profile from everything else here — every
+            # other write in this integration only happens in direct
+            # response to a person's own action. Not worth that risk for a
+            # cosmetic "selection disappears on its own when finished"
+            # feature. Left in place (not deleted) in case it's ever worth
+            # revisiting with a lot more confidence and a safer trigger.
+            #
+            # status = getattr(self._control, "data", None)
+            # activity = getattr(status, "activity", None)
+            # battery = getattr(status, "battery", None)
+            # prev_activity = self._prev_activity_for_chosen_clear
+            # self._prev_activity_for_chosen_clear = activity
+            # just_docked = activity == "docked" and prev_activity is not None and prev_activity != "docked"
+            # if chosen_ids and just_docked and battery is not None and battery >= 95:
+            #     try:
+            #         from .vacuum import _cloud_apply_room_preferences
+            #         if map_id is not None and _has_cloud_session(data):
+            #             await self.hass.async_add_executor_job(
+            #                 _cloud_apply_room_preferences, data, self._device, [], map_id,
+            #             )
+            #         else:
+            #             await self.hass.async_add_executor_job(
+            #                 self._device.apply_room_preferences, [], map_id,
+            #             )
+            #         _LOGGER.debug(
+            #             "%s: just transitioned %s -> docked, fully charged, rooms still chosen (%s) — "
+            #             "clearing, job looks finished rather than mid-job recharge",
+            #             self._device.model, prev_activity, sorted(chosen_ids),
+            #         )
+            #         chosen_ids = set()  # reflect the clear THIS cycle, not next one
+            #     except Exception as clear_err:  # noqa: BLE001
+            #         _LOGGER.debug(
+            #             "%s: couldn't auto-clear finished job's chosen rooms (leaving as-is): %s",
+            #             self._device.model, clear_err,
+            #         )
+            # Keep the per-room mode/power/water too (as ints), not just the
+            # bool — so the card can pre-fill the settings sheet with what's
+            # actually saved on the device, surviving a browser refresh or
+            # HA restart the same way the chosen flag does.
+            settings_by_id = {
+                int(p["room_id"]): {
+                    "clean_mode": int(p["clean_mode"]),
+                    "wind_power": int(p["wind_power"]),
+                    "water_level": int(p["water_level"]),
+                }
+                for p in prefs
+                if all(k in p for k in ("room_id", "clean_mode", "wind_power", "water_level"))
+            }
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.debug("Couldn't refresh chosen-rooms state for the card: %s", err)
+            return
+        # Never mutate room dicts in place — result.vector/result.maps can
+        # alias the SAME objects MapCache holds onto persistently across
+        # cycles (a shallow copy at serve time only copies the top-level
+        # dict, not the rooms list or the room dicts inside it). Mutating
+        # them here was corrupting the cache's own stored data on every
+        # single poll, not just this response — always build fresh dicts
+        # and fresh lists instead, touching nothing the cache owns.
+        def _tag(room: dict) -> dict:
+            rid = room.get("id")
+            tagged = dict(room)
+            tagged["chosen"] = rid in chosen_ids
+            if rid in settings_by_id:
+                tagged["settings"] = settings_by_id[rid]
+            return tagged
+
+        if isinstance(result.vector, dict) and result.vector.get("rooms"):
+            result.vector = {**result.vector, "rooms": [_tag(r) for r in result.vector["rooms"]]}
+        result.maps = [
+            {**m, "rooms": [_tag(r) for r in m["rooms"]]} if m.get("rooms") else m
+            for m in (result.maps or [])
+        ]
+
     async def _async_update_data(self) -> MapResult:
         self._tune_interval()
         try:
@@ -477,20 +604,7 @@ class XiaomiMapCoordinator(DataUpdateCoordinator[MapResult]):
                 # re-auth (raises a reauth flow) rather than dead-end.
                 if not await self._refresh_and_persist():
                     raise ConfigEntryAuthFailed("Xiaomi cloud map session expired") from None
-                try:
-                    slot_results = await self.hass.async_add_executor_job(self._fetch_slots)
-                except SessionExpired:
-                    # The passToken renewal just above proved the account
-                    # credentials are valid, so a second empty map URL right
-                    # after isn't an auth problem — the cloud simply has
-                    # nothing to serve yet (no map uploaded under this
-                    # obj_name, region mismatch, transient hiccup). Reporting
-                    # this as ConfigEntryAuthFailed would force a reauth the
-                    # user can never satisfy (login keeps succeeding, then
-                    # immediately bounces back to reauth every cycle).
-                    raise UpdateFailed(
-                        "Xiaomi cloud has no map available (session is valid)"
-                    ) from None
+                slot_results = await self.hass.async_add_executor_job(self._fetch_slots)
 
             decoded = [r for r in slot_results if r is not None]
             active_meta = next((m for m in maps_meta if m.get("cur")), None)
@@ -550,6 +664,7 @@ class XiaomiMapCoordinator(DataUpdateCoordinator[MapResult]):
                 active_id, "live+cached" if decoded else "from cache",
                 len(cache.all()),
             )
+            await self._apply_chosen_rooms(result, active_id)
             return result
         except (UpdateFailed, ConfigEntryAuthFailed):
             raise

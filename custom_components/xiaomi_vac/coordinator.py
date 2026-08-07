@@ -33,6 +33,16 @@ class XiaomiVacuumCoordinator(DataUpdateCoordinator[VacuumStatus]):
 
     async def _async_update_data(self) -> VacuumStatus:
         try:
-            return await self.hass.async_add_executor_job(self.device.status)
+            status = await self.hass.async_add_executor_job(self.device.status)
         except (DeviceException, DeviceCommunicationError) as err:
             raise UpdateFailed(f"Error polling vacuum: {err}") from err
+        # Was never actually logging what got fetched — only HA's own generic
+        # "Finished fetching... (success: True)" line existed, which says
+        # nothing about the actual status/battery/fault values. Needed to
+        # diagnose the paused->idle drift the person reported, and useful
+        # generally for anything status-related going forward.
+        _LOGGER.debug(
+            "%s: status poll — activity=%s raw_status=%s battery=%s fault=%s",
+            self.device.model, status.activity, status.raw_status, status.battery, status.fault,
+        )
+        return status

@@ -2,9 +2,12 @@
 attribute contract the card consumes. Synchronous; run in an executor."""
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import io
 import logging
+import zlib
 from dataclasses import dataclass, field
 
 from PIL import Image, ImageChops
@@ -20,6 +23,7 @@ from .map_parsers import (
     dreame_decrypt_cloud_blob,
     dreame_extract_enckey,
     has_ijai_grid,
+    ijai_decrypt_try_variants,
     make_parser,
     map_url_endpoint,
     unpack_kwargs,
@@ -119,7 +123,8 @@ class MapFetcher:
     """Owns the map parser; pulls the active map and builds the contract."""
 
     def __init__(self, cloud: XiaomiCloud, *, server: str, user_id: str,
-                 device_id: str, model: str, mac: str, wifi_sn: str, parser_brand: str):
+                 device_id: str, model: str, mac: str, wifi_sn: str, parser_brand: str,
+                 encrypted: bool = True):
         self._cloud = cloud
         self._server = server
         self._user_id = str(user_id)
@@ -128,6 +133,11 @@ class MapFetcher:
         self._mac = mac
         self._wifi_sn = wifi_sn
         self._brand = parser_brand
+        # False only when the device's own live map-encrypt toggle (siid 7/piid
+        # 55, MapCapability.map_encrypt) says maps aren't AES-encrypted. Running
+        # an unencrypted ijai blob through the AES step anyway is what produces
+        # a 100%-reproducible "Padding is incorrect" — see map_coordinator._build.
+        self._encrypted = encrypted
         self._parser = make_parser(
             self._brand, model, ColorsPalette(), Sizes(), _DRAWABLES, ImageConfig(), []
         )
@@ -164,6 +174,7 @@ class MapFetcher:
         xiaomi_json_decrypt.py) and decrypts locally instead. Returns a JSON
         *string*, not bytes, same contract as the upstream decrypt() this
         replaces (parser.parse() only accepts str or dict).
+        ijai: encryption-toggle-aware — see encrypted param on __init__.
         All other paths go through parser.unpack_map normally.
         """
         if self._brand == "dreame" and self._enckey is not None:
@@ -174,6 +185,28 @@ class MapFetcher:
         if self._brand == "xiaomi":
             from .xiaomi_json_decrypt import decrypt_xiaomi_json_map
             return decrypt_xiaomi_json_map(raw, self._model, self._device_id)
+        if self._brand == "ijai" and not self._encrypted:
+            # Same base64-tolerant handling as vacuum_map_parser_ijai's decrypt(),
+            # minus the AES step: the device told us this blob was never
+            # AES-encrypted, only zlib-compressed.
+            try:
+                raw = base64.b64decode(raw, validate=True)
+            except binascii.Error:
+                pass
+            return zlib.decompress(raw)
+        if self._brand == "ijai" and self._encrypted:
+            # Don't trust vacuum_map_parser_ijai's hardcoded hex/non-hex model
+            # whitelist blindly — try both key-type derivations and use
+            # whichever actually produces a valid zlib stream. See
+            # map_parsers.ijai_decrypt_try_variants for why.
+            return ijai_decrypt_try_variants(
+                raw,
+                wifi_sn=self._wifi_sn,
+                owner_id=self._user_id,
+                device_id=self._device_id,
+                model=self._model,
+                device_mac=self._mac,
+            )
         return self._parser.unpack_map(raw, **self._unpack_kw)
 
     def fetch(self, slot: str = "0") -> MapResult | None:

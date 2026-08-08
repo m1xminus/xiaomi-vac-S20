@@ -6,8 +6,11 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import logging
 import zlib
 from typing import Any
+
+_LOGGER = logging.getLogger(__name__)
 
 SUPPORTED_BRANDS = ("ijai", "xiaomi", "dreame", "viomi", "roidmi")
 
@@ -79,6 +82,90 @@ _XIAOMI_JSON_MAP_PROFILES = frozenset({
     "xiaomi.ov71gl",
     "xiaomi.ov81gl",
 })
+
+
+def ijai_decrypt_try_variants(
+    raw: bytes, *, wifi_sn: str, owner_id: str, device_id: str, model: str, device_mac: str,
+) -> bytes:
+    """Decrypt + decompress an ijai-family map blob, trying BOTH key-type
+    variants instead of trusting vacuum_map_parser_ijai's hardcoded per-model
+    whitelist (`is_EncryptKeyTypeHex_model`).
+
+    That whitelist is keyed on exact model strings the library's author has
+    seen; a model that's spec-identical to a whitelisted one for CONTROL
+    purposes (our own registry aliasing) isn't guaranteed to match it for
+    encryption purposes too — the two are independent facts about the
+    firmware. Rather than assume, derive the key both ways and use whichever
+    actually produces a valid zlib stream.
+
+    Raises the hex-variant's exception if neither variant unpacks (keeps
+    the caller's existing "Could not decrypt" handling working unchanged).
+    """
+    try:
+        from Crypto.Cipher import AES
+        from Crypto.Hash import MD5
+        from Crypto.Util.Padding import pad, unpad
+    except ModuleNotFoundError:  # pragma: no cover
+        from Cryptodome.Cipher import AES
+        from Cryptodome.Hash import MD5
+        from Cryptodome.Util.Padding import pad, unpad
+
+    try:
+        data = base64.b64decode(raw, validate=True)
+    except Exception:  # noqa: BLE001
+        data = raw
+
+    # Before spending effort trying key variants: AES-ECB requires the
+    # ciphertext to be an exact multiple of the block size. If it isn't,
+    # this blob was never a valid encrypted map to begin with — no key
+    # will ever decrypt it, and repeated identical "Padding is incorrect"
+    # errors across every key variant are consistent with a truncated/
+    # corrupted upload rather than a wrong-key problem.
+    if len(data) == 0 or len(data) % 16 != 0:
+        _LOGGER.debug(
+            "ijai map blob is not AES-block-aligned: %d bytes (raw len %d) — "
+            "this can't be decrypted with any key; likely a truncated/failed "
+            "upload rather than a wrong-key issue",
+            len(data), len(raw),
+        )
+    else:
+        _LOGGER.debug("ijai map blob: %d bytes, block-aligned, attempting decrypt", len(data))
+
+    def _aes_encrypt(s: str, key: str) -> str:
+        cipher = AES.new(key.encode("utf-8"), AES.MODE_ECB)
+        encrypted = cipher.encrypt(pad(s.encode("utf-8"), AES.block_size))
+        return base64.b64encode(encrypted).decode("utf-8")
+
+    def _md5key(string: str, is_hex: bool) -> str:
+        pjstr = "".join(device_mac.lower().split(":"))
+        temp_model = model.split(".")[-1]
+        if len(temp_model) == 2:
+            temp_model = "00" + temp_model
+        elif len(temp_model) == 3:
+            temp_model = "0" + temp_model
+        elif len(temp_model) > 4:
+            temp_model = temp_model[-4:]
+        aeskey = _aes_encrypt(string, pjstr + temp_model)
+        digest = MD5.new(aeskey.encode("utf-8")).hexdigest()
+        return digest if is_hex else digest[8:-8].upper()
+
+    joined = "+".join([wifi_sn, owner_id, device_id])
+
+    last_err: Exception | None = None
+    for is_hex in (True, False):
+        try:
+            key_str = _md5key(joined, is_hex)
+            parsed_key = bytes.fromhex(key_str) if is_hex else key_str.encode("utf-8")
+            cipher = AES.new(parsed_key, AES.MODE_ECB)
+            decrypted = unpad(cipher.decrypt(data), AES.block_size, "pkcs7")
+            hex_bytes = bytes.fromhex(decrypted.decode("utf-8"))
+            result = zlib.decompress(hex_bytes)
+            _LOGGER.debug("ijai map decrypt: key-type-hex=%s worked", is_hex)
+            return result
+        except Exception as err:  # noqa: BLE001
+            last_err = err
+            continue
+    raise last_err  # both variants failed; surface the last error as before
 
 
 def map_url_endpoint(key: str) -> str:

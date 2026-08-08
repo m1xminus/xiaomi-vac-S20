@@ -592,6 +592,9 @@ XIAOMI_C101EU = ModelProfile(
         clean_room_mode=Prop(7, 25),
         clean_room_oper=Prop(7, 26),
         set_room_clean=Action(7, 3, in_piids=(24, 25, 26)),
+        # Confirmed live against xiaomi.vacuum.d106gl (S20) hardware.
+        get_preference=Action(7, 10),
+        set_preference=Action(7, 9),
     ),
     schedule=ScheduleCapability(
         service=8,
@@ -631,6 +634,10 @@ XIAOMI_C101EU = ModelProfile(
         main_brush_hours=Prop(7, 11),
         hypa_hours=Prop(7, 13),
         mop_hours=Prop(7, 15),
+        side_brush_life=Prop(7, 8),
+        main_brush_life=Prop(7, 10),
+        hypa_life=Prop(7, 12),
+        mop_life=Prop(7, 14),
         door_state=Prop(7, 3),
         cloth_state=Prop(7, 4),
         reset_consumable=Action(7, 1, in_piid=17),
@@ -643,6 +650,8 @@ XIAOMI_C101EU = ModelProfile(
         clean_mode=Prop(7, 31),
         clean_way=Prop(7, 32),
         current_map=Prop(7, 33),
+        live_clean_time=Prop(7, 22),
+        live_clean_area=Prop(7, 23),
         task_status=Prop(7, 37),
     ),
     dnd=DndCapability(

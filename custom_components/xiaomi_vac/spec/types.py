@@ -84,6 +84,15 @@ class RoomCleanCapability:
     clean_room_mode: Prop | None = None
     clean_room_oper: Prop | None = None
     set_room_clean: Action | None = None
+    # per-room cleaning preferences (mode/fan-power/water-level/twice-clean/
+    # carpet-boost/enabled), read/written as a JSON array of packed strings
+    # keyed to a map id — separate from set_room_clean, which only controls
+    # *which* rooms get cleaned, not *how*. Confirmed on real xiaomi.vacuum.
+    # d106gl (S20) hardware, siid 7: get_preference=aiid 10, set_preference=
+    # aiid 9. Packed string format: "{prefer_type}_{room_id}_{clean_mode}_
+    # {wind_power}_{water_level}_{twice_clean}_{carpet}_{choose}".
+    get_preference: Action | None = None
+    set_preference: Action | None = None
 
 
 @dataclass(frozen=True)
@@ -130,11 +139,22 @@ class SettingsCapability:
 
 @dataclass(frozen=True)
 class ConsumablesCapability:
-    """Lifetime hours and accessory presence (siid sweep)."""
+    """Lifetime hours/percentage remaining + accessory presence (siid sweep).
+
+    xiaomi.vacuum.d106gl (and likely siblings) expose BOTH a %-remaining
+    prop and an hours-remaining prop per consumable (confirmed against the
+    device's own MIoT spec) — Xiaomi Home shows the percentage as the
+    primary gauge, hours as the secondary detail. Both are modeled here;
+    hours fields were already present, percentage fields are new.
+    """
     side_brush_hours: Prop | None = None
     main_brush_hours: Prop | None = None
     hypa_hours: Prop | None = None
     mop_hours: Prop | None = None
+    side_brush_life: Prop | None = None
+    main_brush_life: Prop | None = None
+    hypa_life: Prop | None = None
+    mop_life: Prop | None = None
     door_state: Prop | None = None
     cloth_state: Prop | None = None
     reset_consumable: Action | None = None
@@ -142,7 +162,12 @@ class ConsumablesCapability:
 
 @dataclass(frozen=True)
 class CleanHistoryCapability:
-    """Last-clean record fields, carried by the clean-end event."""
+    """Clean-time/area stats, carried by the clean-end event, plus the
+    live in-progress counterparts (separate props on the same device —
+    confirmed on xiaomi.vacuum.d106gl's own MIoT spec: cleaning-time/
+    cleaning-area for 'right now', record-use-time/record-clean-area for
+    the last COMPLETED clean). Keep both; they answer different questions.
+    """
     start_time: Prop | None = None
     use_time: Prop | None = None
     clean_area: Prop | None = None
@@ -151,6 +176,8 @@ class CleanHistoryCapability:
     clean_way: Prop | None = None
     current_map: Prop | None = None
     task_status: Prop | None = None
+    live_clean_time: Prop | None = None
+    live_clean_area: Prop | None = None
 
 
 @dataclass(frozen=True)

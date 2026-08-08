@@ -242,15 +242,29 @@ class IjaiVacuumDevice:
                 f"returned {_raw!r}"
             ) from ex
 
+        # Different brand profiles carry different consumables shapes —
+        # ijai's ConsumablesCapability only has hour-based fields, no life-
+        # percent ones at all; Dreame's DreameConsumablesCapability has
+        # both. Accessing a field a given profile's class doesn't define at
+        # all (not just None-valued, genuinely absent) crashed setup outright
+        # for every non-Dreame profile — confirmed on real hardware.
+        # getattr(..., None) treats "doesn't exist on this profile" the same
+        # as "not populated for this device", which is what every other
+        # field on cc/ch already does when the Prop itself is None.
+        cc_field = (lambda name: getattr(cc, name, None)) if cc is not None else (lambda name: None)
+        ch_field = (lambda name: getattr(ch, name, None)) if ch is not None else (lambda name: None)
+
         consumable_poll = [p for p in (
-            cc.main_brush_life, cc.side_brush_life, cc.hypa_life, cc.mop_life,
-            cc.main_brush_hours, cc.side_brush_hours, cc.hypa_hours, cc.mop_hours,
-            cc.door_state, cc.cloth_state,
-        ) if p is not None] if cc is not None else []
+            cc_field("main_brush_life"), cc_field("side_brush_life"),
+            cc_field("hypa_life"), cc_field("mop_life"),
+            cc_field("main_brush_hours"), cc_field("side_brush_hours"),
+            cc_field("hypa_hours"), cc_field("mop_hours"),
+            cc_field("door_state"), cc_field("cloth_state"),
+        ) if p is not None]
         clean_history_poll = [p for p in (
-            ch.live_clean_time, ch.live_clean_area,
-            ch.use_time, ch.clean_area, ch.start_time,
-        ) if p is not None] if ch is not None else []
+            ch_field("live_clean_time"), ch_field("live_clean_area"),
+            ch_field("use_time"), ch_field("clean_area"), ch_field("start_time"),
+        ) if p is not None]
         extra_poll = consumable_poll + clean_history_poll
         extra_vals: dict = {}
         if extra_poll:
@@ -277,21 +291,21 @@ class IjaiVacuumDevice:
             repeat_raw=_as_int(vals.get(c.repeat)),
             alarm_raw=_as_int(vals.get(c.alarm)),
             volume_raw=_as_int(vals.get(c.volume)),
-            main_brush_life=_as_int(extra_vals.get(cc.main_brush_life)) if cc else None,
-            side_brush_life=_as_int(extra_vals.get(cc.side_brush_life)) if cc else None,
-            filter_life=_as_int(extra_vals.get(cc.hypa_life)) if cc else None,
-            mop_life=_as_int(extra_vals.get(cc.mop_life)) if cc else None,
-            main_brush_hours=_as_int(extra_vals.get(cc.main_brush_hours)) if cc else None,
-            side_brush_hours=_as_int(extra_vals.get(cc.side_brush_hours)) if cc else None,
-            filter_hours=_as_int(extra_vals.get(cc.hypa_hours)) if cc else None,
-            mop_hours=_as_int(extra_vals.get(cc.mop_hours)) if cc else None,
-            door_state=_as_int(extra_vals.get(cc.door_state)) if cc else None,
-            cloth_state=_as_int(extra_vals.get(cc.cloth_state)) if cc else None,
-            clean_area=_as_int(extra_vals.get(ch.live_clean_area)) if ch else None,
-            clean_time=_as_int(extra_vals.get(ch.live_clean_time)) if ch else None,
-            last_clean_area=_as_int(extra_vals.get(ch.clean_area)) if ch else None,
-            last_clean_time=_as_int(extra_vals.get(ch.use_time)) if ch else None,
-            last_clean_start=_as_int(extra_vals.get(ch.start_time)) if ch else None,
+            main_brush_life=_as_int(extra_vals.get(cc_field("main_brush_life"))),
+            side_brush_life=_as_int(extra_vals.get(cc_field("side_brush_life"))),
+            filter_life=_as_int(extra_vals.get(cc_field("hypa_life"))),
+            mop_life=_as_int(extra_vals.get(cc_field("mop_life"))),
+            main_brush_hours=_as_int(extra_vals.get(cc_field("main_brush_hours"))),
+            side_brush_hours=_as_int(extra_vals.get(cc_field("side_brush_hours"))),
+            filter_hours=_as_int(extra_vals.get(cc_field("hypa_hours"))),
+            mop_hours=_as_int(extra_vals.get(cc_field("mop_hours"))),
+            door_state=_as_int(extra_vals.get(cc_field("door_state"))),
+            cloth_state=_as_int(extra_vals.get(cc_field("cloth_state"))),
+            clean_area=_as_int(extra_vals.get(ch_field("live_clean_area"))),
+            clean_time=_as_int(extra_vals.get(ch_field("live_clean_time"))),
+            last_clean_area=_as_int(extra_vals.get(ch_field("clean_area"))),
+            last_clean_time=_as_int(extra_vals.get(ch_field("use_time"))),
+            last_clean_start=_as_int(extra_vals.get(ch_field("start_time"))),
         )
 
     # --- control ---------------------------------------------------------

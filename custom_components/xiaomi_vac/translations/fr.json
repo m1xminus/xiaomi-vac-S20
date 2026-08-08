@@ -62,7 +62,8 @@
     "abort": {
       "already_configured": "Cet aspirateur est déjà configuré.",
       "reauth_successful": "Vous êtes connecté. La carte en direct est restaurée.",
-      "login_failed": "Xiaomi a refusé. Vérifiez votre e-mail et mot de passe, puis réessayez.",
+      "login_failed": "Xiaomi a refusé ({reason}). Vérifiez votre e-mail et mot de passe, puis réessayez.",
+      "login_verification_required": "Xiaomi a bloqué cette connexion et demande une vérification du compte. Connectez-vous sur account.xiaomi.com (ou dans l'application Xiaomi Home), effectuez la vérification demandée, puis réessayez.",
       "no_devices": "Aucun aspirateur supporté sur ce compte.",
       "unsupported_model": "Ce modèle n'est pas encore supporté (aspirateurs ijai/Xiaomi uniquement)."
     }

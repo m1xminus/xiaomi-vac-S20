@@ -121,6 +121,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: XiaomiConfigEntry) -> bo
     """Set up Xiaomi Vacuum from a config entry."""
     data = entry.data
 
+    # This device's raw map grid only ever carries values 0/127/128, never
+    # real per-cell room-id pixels — confirmed, not a bug on our end (see
+    # map_vector.py's roomChain-based vector fallback, which is what this
+    # integration actually renders rooms from). The upstream parser library
+    # doesn't know that and logs a WARNING on every single map fetch for it
+    # regardless — quieting just that one known-harmless message so it
+    # doesn't drown out real issues in the log.
+    logging.getLogger("vacuum_map_parser_ijai.image_parser").setLevel(logging.ERROR)
+
     device = await hass.async_add_executor_job(
         IjaiVacuumDevice, data[CONF_HOST], data[CONF_TOKEN], data[CONF_MODEL]
     )

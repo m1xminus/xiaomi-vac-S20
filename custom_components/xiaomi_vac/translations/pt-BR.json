@@ -62,7 +62,8 @@
     "abort": {
       "already_configured": "Este aspirador já está configurado.",
       "reauth_successful": "Você fez login novamente. O mapa ao vivo foi restaurado.",
-      "login_failed": "Xiaomi recusou. Verifique seu e-mail e senha e tente novamente.",
+      "login_failed": "A Xiaomi recusou ({reason}). Verifique seu e-mail e senha e tente novamente.",
+      "login_verification_required": "A Xiaomi bloqueou este login e está pedindo verificação da conta. Faça login em account.xiaomi.com (ou no app Xiaomi Home), conclua a verificação solicitada e tente novamente.",
       "no_devices": "Nenhum aspirador suportado nesta conta.",
       "unsupported_model": "Este modelo ainda não é suportado (apenas aspiradores ijai/Xiaomi)."
     }

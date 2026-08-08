@@ -62,7 +62,8 @@
     "abort": {
       "already_configured": "Este aspirador já está configurado.",
       "reauth_successful": "Iniciou sessão novamente. O mapa ao vivo foi restaurado.",
-      "login_failed": "A Xiaomi recusou. Verifique o seu e-mail e palavra-passe, depois tente novamente.",
+      "login_failed": "A Xiaomi recusou ({reason}). Verifique o seu e-mail e palavra-passe, depois tente novamente.",
+      "login_verification_required": "A Xiaomi bloqueou este início de sessão e pede verificação da conta. Inicie sessão em account.xiaomi.com (ou na app Xiaomi Home), complete a verificação pedida e tente novamente.",
       "no_devices": "Não há aspiradores suportados nesta conta.",
       "unsupported_model": "Este modelo ainda não é suportado (apenas aspiradores ijai/Xiaomi)."
     }
@@ -105,6 +106,43 @@
       },
       "mop_life": {
         "name": "Vida útil do pano"
+      },
+      "main_brush_hours": {
+        "name": "Horas restantes da escova principal"
+      },
+      "side_brush_hours": {
+        "name": "Horas restantes da escova lateral"
+      },
+      "filter_hours": {
+        "name": "Horas restantes do filtro"
+      },
+      "mop_hours": {
+        "name": "Horas restantes do pano"
+      },
+      "door_state": {
+        "name": "Depósito",
+        "state": {
+          "none": "Nenhum",
+          "dust_box": "Depósito de pó",
+          "water_box": "Depósito de água",
+          "two_in_one": "Depósito 2 em 1"
+        }
+      },
+      "cloth_state": {
+        "name": "Pano de limpeza",
+        "state": {
+          "none": "Não colocado",
+          "exist": "Colocado"
+        }
+      },
+      "last_clean_time": {
+        "name": "Duração da última limpeza"
+      },
+      "last_clean_area": {
+        "name": "Área da última limpeza"
+      },
+      "last_clean_start": {
+        "name": "Início da última limpeza"
       }
     },
     "select": {

@@ -1,0 +1,345 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Dodajte svoj Xiaomi usisivač",
+        "description": "Prijavite se putem e-pošte za prikaz mape u realnom vremenu.",
+        "menu_options": {
+          "credentials": "E-pošta i lozinka (omogućava mapu u realnom vremenu)",
+          "local": "IP adresa i token uređaja (samo kontrola, bez mape)"
+        }
+      },
+      "credentials": {
+        "title": "Prijava na Mi Home nalog",
+        "description": "Prijavite se jednom. Nakon toga ostajete prijavljeni.",
+        "data": {
+          "username": "E-pošta, broj telefona ili Mi nalog ID",
+          "password": "Lozinka"
+        }
+      },
+      "local": {
+        "title": "Lokalna veza",
+        "description": "IP adresa i token od 32 karaktera. Omogućava kontrolu i senzore, bez mape.",
+        "data": {
+          "host": "IP adresa",
+          "token": "Token"
+        }
+      },
+      "captcha": {
+        "title": "Brza bezbednosna provera",
+        "description": "Xiaomi zahteva potvrdu da niste robot. Unesite karaktere sa slike ispod:\n\n![captcha]({captcha_url})",
+        "data": {
+          "code": "Karakteri sa slike"
+        }
+      },
+      "twofa": {
+        "title": "Unesite kod",
+        "description": "Xiaomi vam je upravo poslao kod na e-poštu. Unesite ga ispod.",
+        "data": {
+          "code": "Verifikacioni kod"
+        }
+      },
+      "devices": {
+        "title": "Izaberite svoj usisivač",
+        "description": "Na ovom nalogu postoji više od jednog usisivača. Izaberite onaj koji želite da dodate.",
+        "data": {
+          "device": "Usisivač"
+        }
+      },
+      "miot_oauth": {
+        "title": "Omogućite autentifikaciju za mapu u realnom vremenu",
+        "description": "Opciono. Ovo priprema putanju za MQTT mapu u realnom vremenu. Preskočite ovaj korak da biste zadržali trenutni način osvežavanja mape.",
+        "data": {
+          "enable_miot_oauth": "Omogući OAuth za ažuriranje mape u realnom vremenu"
+        }
+      },
+      "miot_oauth_auth": {
+        "title": "Povežite Xiaomi OAuth",
+        "description": "Otvorite Xiaomi OAuth vezu. Home Assistant će automatski nastaviti proces nakon što vas Xiaomi preusmeri nazad.",
+        "data": {}
+      },
+      "miot_oauth_code": {
+        "title": "Nalepite Xiaomi OAuth kod",
+        "description": "Automatsko preusmeravanje nije završeno. Otvorite ovu vezu, odobrite pristup, a zatim nalepite kod iz adresne trake preusmerene stranice (nakon 'CODE=' i pre '&'):\n\n{authorize_url}",
+        "data": {
+          "code": "OAuth kod"
+        }
+      },
+      "miot_oauth_finish": {
+        "title": "Xiaomi OAuth je povezan",
+        "description": "Autentifikacija za mapu u realnom vremenu je spremna."
+      },
+      "reauth_confirm": {
+        "title": "Ponovna prijava na Xiaomi nalog",
+        "description": "Vaša sesija za Xiaomi mapu u oblaku je istekla i nije mogla automatski da se obnovi. Prijavite se ponovo da biste vratili prikaz mape.",
+        "data": {
+          "username": "E-pošta, broj telefona ili Mi nalog ID",
+          "password": "Lozinka"
+        }
+      }
+    },
+    "error": {
+      "unsupported_model": "Ovaj model još uvek nije podržan.",
+      "cannot_connect": "Nije moguće uspostaviti vezu sa usisivačem na toj IP adresi i sa tim tokenom.",
+      "oauth_failed": "Xiaomi OAuth autorizacija nije uspela. Pokušajte ponovo preko veze ili ručno nalepite kod.",
+      "oauth_region_failed": "Nije moguće odrediti Xiaomi OAuth region na osnovu tog koda."
+    },
+    "progress": {
+      "miot_oauth_auth": "Otvorite [Xiaomi OAuth]({authorize_url}) u novoj kartici. Nakon odobrenja, Xiaomi bi trebalo da vas vrati na Home Assistant i ovaj korak će se automatski nastaviti."
+    },
+    "abort": {
+      "already_configured": "Ovaj usisivač je već podešen.",
+      "reauth_successful": "Ponovo ste prijavljeni. Mapa u realnom vremenu je obnovljena.",
+      "login_failed": "Prijava na Xiaomi nalog u oblaku nije uspela ({reason}). Proverite e-poštu i lozinku, pa pokušajte ponovo.",
+      "login_verification_required": "Xiaomi je blokirao ovu prijavu i zahteva verifikaciju naloga. Prijavite se na stranici account.xiaomi.com (ili u aplikaciji Xiaomi Home), završite traženu verifikaciju, pa pokušajte ponovo.",
+      "no_devices": "Na ovom nalogu nema podržanih usisivača.",
+      "unsupported_model": "Ovaj model još uvek nije podržan (podržani su samo ijai / brendirani Xiaomi ijai usisivači)."
+    }
+  },
+  "options": {
+    "step": {
+      "miot_oauth_auth": {
+        "title": "Povežite Xiaomi OAuth",
+        "description": "Otvorite Xiaomi OAuth vezu. Home Assistant će automatski nastaviti proces nakon što vas Xiaomi preusmeri nazad.",
+        "data": {}
+      },
+      "miot_oauth_code": {
+        "title": "Nalepite Xiaomi OAuth kod",
+        "description": "Automatsko preusmeravanje nije završeno. Otvorite ovu vezu, odobrite pristup, a zatim nalepite kod iz adresne trake preusmerene stranice (nakon 'CODE=' i pre '&'):\n\n{authorize_url}",
+        "data": {
+          "code": "OAuth kod"
+        }
+      },
+      "miot_oauth_finish": {
+        "title": "Xiaomi OAuth je povezan",
+        "description": "Autentifikacija za mapu u realnom vremenu je spremna."
+      }
+    },
+    "error": {
+      "oauth_failed": "Xiaomi OAuth autorizacija nije uspela. Pokušajte ponovo preko veze ili ručno nalepite kod.",
+      "oauth_region_failed": "Nije moguće odrediti Xiaomi OAuth region na osnovu tog koda."
+    },
+    "progress": {
+      "miot_oauth_auth": "Otvorite [Xiaomi OAuth]({authorize_url}) u novoj kartici. Nakon odobrenja, Xiaomi bi trebalo da vas vrati na Home Assistant i ovaj korak će se automatski nastaviti."
+    },
+    "abort": {
+      "oauth_local_only": "Ovaj usisivač je dodat u režimu 'samo lokalno', tako da nema aktivnu Xiaomi sesiju u oblaku sa kojom bi se povezao OAuth."
+    }
+  },
+  "issues": {
+    "oauth_missing": {
+      "title": "Uključite prikaz mape uživo u realnom vremenu",
+      "fix_flow": {
+        "step": {
+          "link": {
+            "title": "Povežite Xiaomi OAuth",
+            "description": "Vaš usisivač radi, ali se mapa sporo osvežava. Povežite Xiaomi OAuth da biste dobili prikaz mape uživo u realnom vremenu (putem MQTT-a). Otvorite ovu vezu, odobrite pristup, a zatim nalepite kod iz adresne trake preusmerene stranice (nakon 'CODE=' i pre '&'):\n\n{authorize_url}",
+            "data": {
+              "code": "OAuth kod"
+            }
+          }
+        },
+        "error": {
+          "oauth_failed": "Xiaomi OAuth autorizacija nije uspela. Pokrenite povezivanje ponovo i nalepite novi kod.",
+          "oauth_region_failed": "Nije moguće odrediti Xiaomi OAuth region na osnovu tog koda."
+        },
+        "abort": {
+          "entry_gone": "Taj usisivač više nije podešen."
+        }
+      }
+    }
+  },
+  "entity": {
+    "camera": {
+      "map": {
+        "name": "Mapa"
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "cleaning": "Čišćenje",
+          "paused": "Pauzirano",
+          "idle": "Mirovanje",
+          "returning": "Povratak na bazu",
+          "docked": "Na bazi",
+          "error": "Greška"
+        }
+      },
+      "battery": {
+        "name": "Baterija"
+      },
+      "clean_area": {
+        "name": "Očišćena površina"
+      },
+      "clean_time": {
+        "name": "Vreme čišćenja"
+      },
+      "main_brush_life": {
+        "name": "Vek trajanja glavne četke"
+      },
+      "side_brush_life": {
+        "name": "Vek trajanja bočne četke"
+      },
+      "filter_life": {
+        "name": "Vek trajanja filtera"
+      },
+      "mop_life": {
+        "name": "Vek trajanja krpe"
+      }
+    },
+    "select": {
+      "fan_speed": {
+        "name": "Brzina ventilatora",
+        "state": {
+          "quiet": "Tiho",
+          "standard": "Standardno",
+          "medium_gear": "Srednji nivo",
+          "strong": "Snažno",
+          "medium": "Srednje",
+          "mode_quiet": "Tihi režim",
+          "mode_standard": "Standardni režim",
+          "mode_medium": "Srednji režim",
+          "mode_strong": "Snažni režim",
+          "ultra_strong": "Ultrasnažno",
+          "off": "Isključeno",
+          "energy_saving": "Ušteda energije",
+          "powerful": "Moćno",
+          "slient": "Tiho",
+          "turbo": "Turbo",
+          "0": "Tiho",
+          "1": "Ušteda energije",
+          "2": "Standardno",
+          "3": "Moćno",
+          "close": "Zatvoreno",
+          "one": "Nivo jedan",
+          "two": "Nivo dva",
+          "three": "Nivo tri",
+          "forth": "Nivo četiri",
+          "silent": "Tiho",
+          "basic": "Osnovno",
+          "full_speed": "Maksimalna brzina"
+        }
+      },
+      "water_level": {
+        "name": "Nivo vode",
+        "state": {
+          "low_water_level": "Nizak nivo vode",
+          "medium_water_level": "Srednji nivo vode",
+          "high_water_level": "Visok nivo vode",
+          "low": "Nizak",
+          "medium": "Srednji",
+          "high": "Visok",
+          "middle": "Srednji",
+          "height": "Visok",
+          "mid": "Srednji",
+          "1": "1",
+          "2": "2",
+          "3": "3",
+          "gear_1": "Nivo 1",
+          "gear_2": "Nivo 2",
+          "gear_3": "Nivo 3",
+          "close": "Zatvoreno",
+          "one": "Nivo jedan",
+          "two": "Nivo dva",
+          "three": "Nivo tri",
+          "hig": "Visok",
+          "off": "Isključeno",
+          "level1": "Nivo 1",
+          "level2": "Nivo 2",
+          "level3": "Nivo 3"
+        }
+      },
+      "mode": {
+        "name": "Režim čišćenja",
+        "state": {
+          "silent": "Tiho",
+          "basic": "Standardno",
+          "strong": "Snažno",
+          "full_speed": "Maksimalna brzina",
+          "auto": "Automatski",
+          "sweep": "Suvo čišćenje (usisavanje)",
+          "sweep_and_mop": "Usisavanje i brisanje",
+          "mop": "Vlažno brisanje (moping)",
+          "medium": "Srednji nivo",
+          "sweepandmop": "Usisavanje i brisanje",
+          "sweep_then_mop": "Prvo usisavanje, pa brisanje",
+          "sweep_mop": "Usisavanje i brisanje",
+          "sweep_before_mopping": "Usisavanje pre brisanja"
+        }
+      },
+      "sweep_type": {
+        "name": "Tip čišćenja",
+        "state": {
+          "global": "Kompletno",
+          "mop": "Vlažno brisanje",
+          "edge": "Čišćenje ivica",
+          "area": "Oblast",
+          "point": "Lokalno (tačka)",
+          "remote": "Daljinsko upravljanje",
+          "explore": "Mapiranje",
+          "room": "Prilagođeno po sobama",
+          "floor": "Prilagođeno po podovima",
+          "control": "Daljinsko upravljanje",
+          "total": "Kompletno čišćenje",
+          "wall": "Čišćenje uz ivice zida",
+          "zone": "Čišćenje zone",
+          "corner": "Čišćenje uglova i ivica",
+          "man": "Ručno upravljanje",
+          "roomprefer": "Prilagođeno po sobama",
+          "materialprefer": "Prilagođeno po podovima",
+          "maping": "Mapiranje u toku",
+          "gocharging": "Povratak na punjenje",
+          "remotecontrol": "Daljinsko upravljanje",
+          "selectroom": "Izabrana soba",
+          "customclean": "Prilagođeno čišćenje",
+          "costum": "Prilagođeno",
+          "custom_area": "Prilagođena zona",
+          "appointment": "Zakazano čišćenje",
+          "linkage": "Pametno povezivanje (automatizacija)",
+          "fast": "Brzo čišćenje",
+          "ai_hosting": "AI pametno upravljanje"
+        }
+      },
+      "active_map": {
+        "name": "Aktivna mapa"
+      }
+    },
+    "switch": {
+      "repeat": {
+        "name": "Ponavljanje čišćenja"
+      },
+      "alarm": {
+        "name": "Pronađi usisivač (zvučni signal)"
+      }
+    },
+    "number": {
+      "volume": {
+        "name": "Jačina zvuka"
+      }
+    }
+  },
+  "services": {
+    "clean_segment": {
+      "name": "Očisti izabrane sobe",
+      "description": "Započnite čišćenje jedne ili više soba na osnovu njihovog ID-ja sa mape.",
+      "fields": {
+        "segments": {
+          "name": "Sobe",
+          "description": "Lista ID-jeva soba za čišćenje (iz atributa „rooms” kamere mape)."
+        }
+      }
+    },
+    "refresh_map": {
+      "name": "Osveži mapu",
+      "description": "Nakratko pokreće usisivač kako bi napustio bazu i poslao osveženu mapu, a zatim ga vraća nazad na bazu.",
+      "fields": {
+        "confirm_movement": {
+          "name": "Potvrdi kretanje",
+          "description": "Mora biti označeno (tačno). Usisivač će nakratko sići sa baze i odmah se vratiti."
+        }
+      }
+    }
+  }
+}

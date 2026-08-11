@@ -24,7 +24,7 @@ While the upstream integration provides broad multi-model support, this fork is 
   
 ### Supported and Tested Vacuums 
 * **Xiaomi S20** - Full support
-* **Xiaomi S10** - Full support (Tested by Brano69)
+* **Xiaomi S10** - Full support (Tested by @cpmarexel2f)
 
 ---
 

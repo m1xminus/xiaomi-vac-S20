@@ -23,8 +23,8 @@ While the upstream integration provides broad multi-model support, this fork is 
 * **Optimized live map rendering:** Cloud-assisted vector map parsing with live position, path trace, and segment highlighting tailored for the S20 platform.
   
 ### Supported and Tested Vacuums 
-Xiaomi S20 - Full support
-Xiaomi S10 - Full support (Tested by Brano69)
+* **Xiaomi S20** - Full support
+* **Xiaomi S10** - Full support (Tested by Brano69)
 
 ---
 

@@ -1,9 +1,14 @@
 {
   "domain": "xiaomi_vac",
   "name": "Xiaomi Vacuum",
-  "codeowners": ["@m1xminus"],
+  "codeowners": [
+    "@m1xminus"
+  ],
   "config_flow": true,
-  "dependencies": ["http", "lovelace"],
+  "dependencies": [
+    "http",
+    "lovelace"
+  ],
   "documentation": "https://github.com/m1xminus/xiaomi-vac-S20",
   "integration_type": "device",
   "iot_class": "local_polling",
@@ -19,5 +24,5 @@
     "pycryptodome==3.23.0",
     "paho-mqtt==2.1.0"
   ],
-  "version": "1.2.4"
+  "version": "1.2.5"
 }

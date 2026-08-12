@@ -53,11 +53,35 @@
           "username": "E-mail, numero di telefono o ID dell'account Mi",
           "password": "Password"
         }
+      },
+      "miot_oauth": {
+        "data": {
+          "enable_miot_oauth": "Abilita OAuth per gli aggiornamenti mappa in tempo reale"
+        },
+        "description": "Facoltativo. Prepara il percorso mappa MQTT in tempo reale. Salti questo passaggio per mantenere l'attuale comportamento di aggiornamento periodico della mappa.",
+        "title": "Abilita autenticazione mappa in tempo reale"
+      },
+      "miot_oauth_auth": {
+        "description": "Apra il collegamento Xiaomi OAuth. Home Assistant continuerà automaticamente dopo il reindirizzamento di Xiaomi.",
+        "title": "Collega Xiaomi OAuth"
+      },
+      "miot_oauth_code": {
+        "data": {
+          "code": "Codice OAuth"
+        },
+        "description": "Il callback automatico non si è completato. Apra questo collegamento, approvi l'accesso, quindi incolli il codice dalla barra degli indirizzi della pagina di reindirizzamento (dopo 'CODE=' e prima di '&'):\n\n{authorize_url}",
+        "title": "Incolla codice Xiaomi OAuth"
+      },
+      "miot_oauth_finish": {
+        "description": "L'autenticazione mappa in tempo reale è pronta.",
+        "title": "Xiaomi OAuth collegato"
       }
     },
     "error": {
       "unsupported_model": "Questo modello non è ancora supportato.",
-      "cannot_connect": "Non è possibile raggiungere l'aspirapolvere a questo IP con questo token."
+      "cannot_connect": "Non è possibile raggiungere l'aspirapolvere a questo IP con questo token.",
+      "oauth_failed": "Autenticazione OAuth Xiaomi non riuscita. Riprovi il collegamento o incolli il codice manualmente.",
+      "oauth_region_failed": "Non è stato possibile determinare la regione OAuth Xiaomi da quel codice."
     },
     "abort": {
       "already_configured": "Questo aspirapolvere è già configurato.",
@@ -66,6 +90,9 @@
       "login_verification_required": "Xiaomi ha bloccato questo accesso e richiede la verifica dell'account. Effettui l'accesso su account.xiaomi.com (o nell'app Xiaomi Home), completi la verifica richiesta, quindi riprovi.",
       "no_devices": "Nessun aspirapolvere supportato su questo account.",
       "unsupported_model": "Questo modello non è ancora supportato (solo aspirapolveri ijai/Xiaomi)."
+    },
+    "progress": {
+      "miot_oauth_auth": "Apra [Xiaomi OAuth]({authorize_url}) in una nuova scheda. Dopo l'approvazione, Xiaomi dovrebbe tornare a Home Assistant e questo passaggio continuerà automaticamente."
     }
   },
   "entity": {
@@ -106,6 +133,43 @@
       },
       "mop_life": {
         "name": "Durata panno"
+      },
+      "cloth_state": {
+        "name": "Panno lavapavimenti",
+        "state": {
+          "none": "Non montato",
+          "exist": "Montato"
+        }
+      },
+      "door_state": {
+        "name": "Serbatoio polvere/acqua",
+        "state": {
+          "none": "Nessuno",
+          "dust_box": "Contenitore polvere",
+          "water_box": "Serbatoio acqua",
+          "two_in_one": "Serbatoio 2 in 1"
+        }
+      },
+      "filter_hours": {
+        "name": "Ore residue filtro"
+      },
+      "last_clean_area": {
+        "name": "Area dell'ultima pulizia"
+      },
+      "last_clean_start": {
+        "name": "Inizio dell'ultima pulizia"
+      },
+      "last_clean_time": {
+        "name": "Durata dell'ultima pulizia"
+      },
+      "main_brush_hours": {
+        "name": "Ore residue spazzola principale"
+      },
+      "mop_hours": {
+        "name": "Ore residue panno lavapavimenti"
+      },
+      "side_brush_hours": {
+        "name": "Ore residue spazzola laterale"
       }
     },
     "select": {
@@ -248,6 +312,68 @@
           "name": "Stanze",
           "description": "Elenco degli ID stanza da pulire (dall'attributo \"rooms\" della telecamera della mappa)."
         }
+      }
+    },
+    "refresh_map": {
+      "description": "Avvia brevemente l'aspirapolvere per fargli lasciare la base e caricare una mappa aggiornata, quindi lo rimanda alla base.",
+      "fields": {
+        "confirm_movement": {
+          "description": "Deve essere vero. L'aspirapolvere lascerà brevemente la base e tornerà.",
+          "name": "Conferma movimento"
+        }
+      },
+      "name": "Aggiorna mappa"
+    }
+  },
+  "issues": {
+    "oauth_missing": {
+      "fix_flow": {
+        "abort": {
+          "entry_gone": "Quell'aspirapolvere non è più configurato."
+        },
+        "error": {
+          "oauth_failed": "Autenticazione OAuth Xiaomi non riuscita. Avvii nuovamente il collegamento e incolli il nuovo codice.",
+          "oauth_region_failed": "Non è stato possibile determinare la regione OAuth Xiaomi da quel codice."
+        },
+        "step": {
+          "link": {
+            "data": {
+              "code": "Codice OAuth"
+            },
+            "description": "Il Suo aspirapolvere funziona, ma la mappa si aggiorna lentamente. Colleghi Xiaomi OAuth per ottenere la mappa dal vivo in tempo reale (via MQTT). Apra questo collegamento, approvi l'accesso, quindi incolli il codice dalla barra degli indirizzi della pagina di reindirizzamento (dopo 'CODE=' e prima di '&'):\n\n{authorize_url}",
+            "title": "Collega Xiaomi OAuth"
+          }
+        }
+      },
+      "title": "Attivi la mappa dal vivo in tempo reale"
+    }
+  },
+  "options": {
+    "abort": {
+      "oauth_local_only": "Questo aspirapolvere è stato aggiunto in modalità solo locale, quindi non ha una sessione cloud Xiaomi a cui collegare OAuth."
+    },
+    "error": {
+      "oauth_failed": "Autenticazione OAuth Xiaomi non riuscita. Riprovi il collegamento o incolli il codice manualmente.",
+      "oauth_region_failed": "Non è stato possibile determinare la regione OAuth Xiaomi da quel codice."
+    },
+    "progress": {
+      "miot_oauth_auth": "Apra [Xiaomi OAuth]({authorize_url}) in una nuova scheda. Dopo l'approvazione, Xiaomi dovrebbe tornare a Home Assistant e questo passaggio continuerà automaticamente."
+    },
+    "step": {
+      "miot_oauth_auth": {
+        "description": "Apra il collegamento Xiaomi OAuth. Home Assistant continuerà automaticamente dopo il reindirizzamento di Xiaomi.",
+        "title": "Collega Xiaomi OAuth"
+      },
+      "miot_oauth_code": {
+        "data": {
+          "code": "Codice OAuth"
+        },
+        "description": "Il callback automatico non si è completato. Apra questo collegamento, approvi l'accesso, quindi incolli il codice dalla barra degli indirizzi della pagina di reindirizzamento (dopo 'CODE=' e prima di '&'):\n\n{authorize_url}",
+        "title": "Incolla codice Xiaomi OAuth"
+      },
+      "miot_oauth_finish": {
+        "description": "L'autenticazione mappa in tempo reale è pronta.",
+        "title": "Xiaomi OAuth collegato"
       }
     }
   }

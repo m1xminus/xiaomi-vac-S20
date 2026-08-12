@@ -53,11 +53,35 @@
           "username": "电子邮件、电话号码或小米账户ID",
           "password": "密码"
         }
+      },
+      "miot_oauth": {
+        "data": {
+          "enable_miot_oauth": "启用 OAuth 以获取实时地图更新"
+        },
+        "description": "可选。这会准备好实时 MQTT 地图路径。跳过此步骤将保持当前的轮询地图方式。",
+        "title": "启用实时地图授权"
+      },
+      "miot_oauth_auth": {
+        "description": "打开小米 OAuth 链接。小米跳转回来后，Home Assistant 会自动继续。",
+        "title": "关联小米 OAuth"
+      },
+      "miot_oauth_code": {
+        "data": {
+          "code": "OAuth 代码"
+        },
+        "description": "自动回调未完成。请打开此链接，批准访问权限，然后从跳转后地址栏中复制代码并粘贴（位于 'CODE=' 之后、'&' 之前）：\n\n{authorize_url}",
+        "title": "粘贴小米 OAuth 代码"
+      },
+      "miot_oauth_finish": {
+        "description": "实时地图授权已就绪。",
+        "title": "小米 OAuth 已关联"
       }
     },
     "error": {
       "unsupported_model": "目前不支持此型号。",
-      "cannot_connect": "无法通过此IP和令牌连接到吸尘器。"
+      "cannot_connect": "无法通过此IP和令牌连接到吸尘器。",
+      "oauth_failed": "小米 OAuth 授权失败。请重新点击链接，或手动粘贴代码。",
+      "oauth_region_failed": "无法根据该代码确定小米 OAuth 所属区域。"
     },
     "abort": {
       "already_configured": "此吸尘器已经配置。",
@@ -66,6 +90,9 @@
       "login_verification_required": "小米已阻止此登录，并要求验证账户。请在 account.xiaomi.com（或小米米家应用）中登录，完成所需的验证，然后重试。",
       "no_devices": "此账户中没有支持的吸尘器。",
       "unsupported_model": "目前不支持此型号（仅限ijai/小米品牌ijai吸尘器）。"
+    },
+    "progress": {
+      "miot_oauth_auth": "在新标签页中打开 [小米 OAuth]({authorize_url})。批准后，小米应会返回 Home Assistant，此步骤将自动继续。"
     }
   },
   "entity": {
@@ -106,6 +133,43 @@
       },
       "mop_life": {
         "name": "拖布寿命"
+      },
+      "cloth_state": {
+        "name": "拖布",
+        "state": {
+          "none": "未安装",
+          "exist": "已安装"
+        }
+      },
+      "door_state": {
+        "name": "尘盒/水箱",
+        "state": {
+          "none": "无",
+          "dust_box": "尘盒",
+          "water_box": "水箱",
+          "two_in_one": "二合一水箱"
+        }
+      },
+      "filter_hours": {
+        "name": "滤芯剩余使用时间"
+      },
+      "last_clean_area": {
+        "name": "上次清扫面积"
+      },
+      "last_clean_start": {
+        "name": "上次清扫开始时间"
+      },
+      "last_clean_time": {
+        "name": "上次清扫时长"
+      },
+      "main_brush_hours": {
+        "name": "主刷剩余使用时间"
+      },
+      "mop_hours": {
+        "name": "拖布剩余使用时间"
+      },
+      "side_brush_hours": {
+        "name": "边刷剩余使用时间"
       }
     },
     "select": {
@@ -248,6 +312,68 @@
           "name": "房间",
           "description": "要清扫的房间ID列表（来自地图摄像头的\"rooms\"属性）。"
         }
+      }
+    },
+    "refresh_map": {
+      "description": "短暂启动扫地机器人，使其离开基站并上传最新地图，然后再返回基站。",
+      "fields": {
+        "confirm_movement": {
+          "description": "必须为 true。扫地机器人会短暂离开基站后返回。",
+          "name": "确认移动"
+        }
+      },
+      "name": "刷新地图"
+    }
+  },
+  "issues": {
+    "oauth_missing": {
+      "fix_flow": {
+        "abort": {
+          "entry_gone": "该扫地机器人已不再配置。"
+        },
+        "error": {
+          "oauth_failed": "小米 OAuth 授权失败。请重新开始关联并粘贴新的代码。",
+          "oauth_region_failed": "无法根据该代码确定小米 OAuth 所属区域。"
+        },
+        "step": {
+          "link": {
+            "data": {
+              "code": "OAuth 代码"
+            },
+            "description": "您的扫地机器人可以正常工作，但地图刷新较慢。关联小米 OAuth 即可获取实时（MQTT）地图。请打开此链接，批准访问权限，然后从跳转后地址栏中复制代码并粘贴（位于 'CODE=' 之后、'&' 之前）：\n\n{authorize_url}",
+            "title": "关联小米 OAuth"
+          }
+        }
+      },
+      "title": "开启实时地图"
+    }
+  },
+  "options": {
+    "abort": {
+      "oauth_local_only": "此扫地机器人是以“仅本地”模式添加的，因此没有可关联 OAuth 的小米云端会话。"
+    },
+    "error": {
+      "oauth_failed": "小米 OAuth 授权失败。请重新点击链接，或手动粘贴代码。",
+      "oauth_region_failed": "无法根据该代码确定小米 OAuth 所属区域。"
+    },
+    "progress": {
+      "miot_oauth_auth": "在新标签页中打开 [小米 OAuth]({authorize_url})。批准后，小米应会返回 Home Assistant，此步骤将自动继续。"
+    },
+    "step": {
+      "miot_oauth_auth": {
+        "description": "打开小米 OAuth 链接。小米跳转回来后，Home Assistant 会自动继续。",
+        "title": "关联小米 OAuth"
+      },
+      "miot_oauth_code": {
+        "data": {
+          "code": "OAuth 代码"
+        },
+        "description": "自动回调未完成。请打开此链接，批准访问权限，然后从跳转后地址栏中复制代码并粘贴（位于 'CODE=' 之后、'&' 之前）：\n\n{authorize_url}",
+        "title": "粘贴小米 OAuth 代码"
+      },
+      "miot_oauth_finish": {
+        "description": "实时地图授权已就绪。",
+        "title": "小米 OAuth 已关联"
       }
     }
   }

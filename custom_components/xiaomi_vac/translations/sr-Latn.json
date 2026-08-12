@@ -187,6 +187,43 @@
       },
       "mop_life": {
         "name": "Vek trajanja krpe"
+      },
+      "cloth_state": {
+        "name": "Krpa za brisanje",
+        "state": {
+          "none": "Nije postavljena",
+          "exist": "Postavljena"
+        }
+      },
+      "door_state": {
+        "name": "Rezervoar za prašinu/vodu",
+        "state": {
+          "none": "Nema",
+          "dust_box": "Rezervoar za prašinu",
+          "water_box": "Rezervoar za vodu",
+          "two_in_one": "Rezervoar 2 u 1"
+        }
+      },
+      "filter_hours": {
+        "name": "Preostali sati filtera"
+      },
+      "last_clean_area": {
+        "name": "Površina poslednjeg čišćenja"
+      },
+      "last_clean_start": {
+        "name": "Početak poslednjeg čišćenja"
+      },
+      "last_clean_time": {
+        "name": "Trajanje poslednjeg čišćenja"
+      },
+      "main_brush_hours": {
+        "name": "Preostali sati glavne četke"
+      },
+      "mop_hours": {
+        "name": "Preostali sati krpe"
+      },
+      "side_brush_hours": {
+        "name": "Preostali sati bočne četke"
       }
     },
     "select": {

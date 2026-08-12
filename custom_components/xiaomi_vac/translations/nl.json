@@ -53,11 +53,35 @@
           "username": "E-mail, telefoonnummer of Mi-account-ID",
           "password": "Wachtwoord"
         }
+      },
+      "miot_oauth": {
+        "data": {
+          "enable_miot_oauth": "OAuth inschakelen voor realtime kaartupdates"
+        },
+        "description": "Optioneel. Dit bereidt het live MQTT-kaartpad voor. Sla deze stap over om het huidige pollinggedrag van de kaart te behouden.",
+        "title": "Realtime kaartauthenticatie inschakelen"
+      },
+      "miot_oauth_auth": {
+        "description": "Open de Xiaomi OAuth-link. Home Assistant gaat automatisch verder nadat Xiaomi terugstuurt.",
+        "title": "Xiaomi OAuth koppelen"
+      },
+      "miot_oauth_code": {
+        "data": {
+          "code": "OAuth-code"
+        },
+        "description": "De automatische terugkoppeling is niet voltooid. Open deze link, keur toegang goed en plak vervolgens de code uit de adresbalk van de doorverwijzing (na 'CODE=' en vóór '&'):\n\n{authorize_url}",
+        "title": "Xiaomi OAuth-code plakken"
+      },
+      "miot_oauth_finish": {
+        "description": "De realtime kaartauthenticatie is gereed.",
+        "title": "Xiaomi OAuth gekoppeld"
       }
     },
     "error": {
       "unsupported_model": "Dit model wordt nog niet ondersteund.",
-      "cannot_connect": "Kan de stofzuiger niet bereiken op dat IP-adres met dat token."
+      "cannot_connect": "Kan de stofzuiger niet bereiken op dat IP-adres met dat token.",
+      "oauth_failed": "Xiaomi OAuth is mislukt. Probeer de link opnieuw of plak de code handmatig.",
+      "oauth_region_failed": "Kon de Xiaomi OAuth-regio niet bepalen aan de hand van die code."
     },
     "abort": {
       "already_configured": "Deze stofzuiger is al ingesteld.",
@@ -66,6 +90,9 @@
       "login_verification_required": "Xiaomi heeft deze aanmelding geblokkeerd en vraagt om accountverificatie. Log in op account.xiaomi.com (of in de Xiaomi Home-app), voltooi de gevraagde verificatie en probeer het opnieuw.",
       "no_devices": "Geen ondersteunde stofzuigers op deze account.",
       "unsupported_model": "Dit model wordt nog niet ondersteund (alleen ijai/Xiaomi-merk ijai stofzuigers)."
+    },
+    "progress": {
+      "miot_oauth_auth": "Open [Xiaomi OAuth]({authorize_url}) in een nieuw tabblad. Na goedkeuring keert Xiaomi terug naar Home Assistant en gaat deze stap automatisch verder."
     }
   },
   "entity": {
@@ -106,6 +133,43 @@
       },
       "mop_life": {
         "name": "Levensduur zwabber"
+      },
+      "cloth_state": {
+        "name": "Dweildoek",
+        "state": {
+          "none": "Niet geplaatst",
+          "exist": "Geplaatst"
+        }
+      },
+      "door_state": {
+        "name": "Stof-/waterreservoir",
+        "state": {
+          "none": "Geen",
+          "dust_box": "Stofreservoir",
+          "water_box": "Waterreservoir",
+          "two_in_one": "2-in-1-reservoir"
+        }
+      },
+      "filter_hours": {
+        "name": "Resterende uren filter"
+      },
+      "last_clean_area": {
+        "name": "Oppervlakte laatste schoonmaakbeurt"
+      },
+      "last_clean_start": {
+        "name": "Start laatste schoonmaakbeurt"
+      },
+      "last_clean_time": {
+        "name": "Duur laatste schoonmaakbeurt"
+      },
+      "main_brush_hours": {
+        "name": "Resterende uren hoofdborstel"
+      },
+      "mop_hours": {
+        "name": "Resterende uren dweildoek"
+      },
+      "side_brush_hours": {
+        "name": "Resterende uren zijborstel"
       }
     },
     "select": {
@@ -248,6 +312,68 @@
           "name": "Kamers",
           "description": "Lijst met kaameraID's om schoon te maken (van het attribuut \"rooms\" van de kaartcamera)."
         }
+      }
+    },
+    "refresh_map": {
+      "description": "Start de stofzuiger kort zodat hij het dock verlaat en een nieuwe kaart uploadt, en stuurt hem daarna terug naar het dock.",
+      "fields": {
+        "confirm_movement": {
+          "description": "Moet waar zijn. De stofzuiger verlaat kort het dock en keert terug.",
+          "name": "Beweging bevestigen"
+        }
+      },
+      "name": "Kaart verversen"
+    }
+  },
+  "issues": {
+    "oauth_missing": {
+      "fix_flow": {
+        "abort": {
+          "entry_gone": "Die stofzuiger is niet meer ingesteld."
+        },
+        "error": {
+          "oauth_failed": "Xiaomi OAuth is mislukt. Start de koppeling opnieuw en plak de nieuwe code.",
+          "oauth_region_failed": "Kon de Xiaomi OAuth-regio niet bepalen aan de hand van die code."
+        },
+        "step": {
+          "link": {
+            "data": {
+              "code": "OAuth-code"
+            },
+            "description": "Uw stofzuiger werkt, maar de kaart wordt traag ververst. Koppel Xiaomi OAuth om de realtime live kaart (via MQTT) te krijgen. Open deze link, keur toegang goed en plak vervolgens de code uit de adresbalk van de doorverwijzing (na 'CODE=' en vóór '&'):\n\n{authorize_url}",
+            "title": "Xiaomi OAuth koppelen"
+          }
+        }
+      },
+      "title": "Schakel de realtime live kaart in"
+    }
+  },
+  "options": {
+    "abort": {
+      "oauth_local_only": "Deze stofzuiger is toegevoegd als alleen-lokaal en heeft daarom geen Xiaomi-cloudsessie om OAuth aan te koppelen."
+    },
+    "error": {
+      "oauth_failed": "Xiaomi OAuth is mislukt. Probeer de link opnieuw of plak de code handmatig.",
+      "oauth_region_failed": "Kon de Xiaomi OAuth-regio niet bepalen aan de hand van die code."
+    },
+    "progress": {
+      "miot_oauth_auth": "Open [Xiaomi OAuth]({authorize_url}) in een nieuw tabblad. Na goedkeuring keert Xiaomi terug naar Home Assistant en gaat deze stap automatisch verder."
+    },
+    "step": {
+      "miot_oauth_auth": {
+        "description": "Open de Xiaomi OAuth-link. Home Assistant gaat automatisch verder nadat Xiaomi terugstuurt.",
+        "title": "Xiaomi OAuth koppelen"
+      },
+      "miot_oauth_code": {
+        "data": {
+          "code": "OAuth-code"
+        },
+        "description": "De automatische terugkoppeling is niet voltooid. Open deze link, keur toegang goed en plak vervolgens de code uit de adresbalk van de doorverwijzing (na 'CODE=' en vóór '&'):\n\n{authorize_url}",
+        "title": "Xiaomi OAuth-code plakken"
+      },
+      "miot_oauth_finish": {
+        "description": "De realtime kaartauthenticatie is gereed.",
+        "title": "Xiaomi OAuth gekoppeld"
       }
     }
   }

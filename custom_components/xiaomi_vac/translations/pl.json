@@ -53,11 +53,35 @@
           "username": "E-mail, numer telefonu lub ID konta Mi",
           "password": "Hasło"
         }
+      },
+      "miot_oauth": {
+        "data": {
+          "enable_miot_oauth": "Włącz OAuth dla aktualizacji mapy w czasie rzeczywistym"
+        },
+        "description": "Opcjonalne. Przygotowuje to ścieżkę mapy na żywo przez MQTT. Pomiń ten krok, aby zachować obecne zachowanie mapy oparte na odpytywaniu.",
+        "title": "Włącz uwierzytelnianie mapy w czasie rzeczywistym"
+      },
+      "miot_oauth_auth": {
+        "description": "Otwórz link OAuth Xiaomi. Home Assistant będzie kontynuować automatycznie po przekierowaniu przez Xiaomi.",
+        "title": "Połącz OAuth Xiaomi"
+      },
+      "miot_oauth_code": {
+        "data": {
+          "code": "Kod OAuth"
+        },
+        "description": "Automatyczne wywołanie zwrotne nie zostało zakończone. Otwórz ten link, zatwierdź dostęp, a następnie wklej kod z paska adresu strony przekierowania (po 'CODE=' i przed '&'):\n\n{authorize_url}",
+        "title": "Wklej kod OAuth Xiaomi"
+      },
+      "miot_oauth_finish": {
+        "description": "Uwierzytelnianie mapy w czasie rzeczywistym jest gotowe.",
+        "title": "OAuth Xiaomi połączone"
       }
     },
     "error": {
       "unsupported_model": "Ten model nie jest jeszcze obsługiwany.",
-      "cannot_connect": "Nie można połączyć się z odkurzaczem przy tym adresie IP i tokenie."
+      "cannot_connect": "Nie można połączyć się z odkurzaczem przy tym adresie IP i tokenie.",
+      "oauth_failed": "Uwierzytelnianie OAuth Xiaomi nie powiodło się. Spróbuj ponownie skorzystać z linku lub wklej kod ręcznie.",
+      "oauth_region_failed": "Nie udało się ustalić regionu OAuth Xiaomi na podstawie tego kodu."
     },
     "abort": {
       "already_configured": "Ten odkurzacz jest już skonfigurowany.",
@@ -66,6 +90,9 @@
       "login_verification_required": "Xiaomi zablokowało to logowanie i wymaga weryfikacji konta. Zaloguj się na account.xiaomi.com (lub w aplikacji Xiaomi Home), ukończ wymaganą weryfikację, a następnie spróbuj ponownie.",
       "no_devices": "Na tym koncie nie ma obsługiwanych odkurzaczy.",
       "unsupported_model": "Ten model nie jest jeszcze obsługiwany (tylko odkurzacze ijai/Xiaomi)."
+    },
+    "progress": {
+      "miot_oauth_auth": "Otwórz [Xiaomi OAuth]({authorize_url}) w nowej karcie. Po zatwierdzeniu Xiaomi powinno wrócić do Home Assistant, a ten krok będzie kontynuowany automatycznie."
     }
   },
   "entity": {
@@ -106,6 +133,43 @@
       },
       "mop_life": {
         "name": "Żywotność pędu mopującego"
+      },
+      "cloth_state": {
+        "name": "Mopująca ściereczka",
+        "state": {
+          "none": "Niezałożona",
+          "exist": "Założona"
+        }
+      },
+      "door_state": {
+        "name": "Zbiornik na kurz/wodę",
+        "state": {
+          "none": "Brak",
+          "dust_box": "Pojemnik na kurz",
+          "water_box": "Zbiornik na wodę",
+          "two_in_one": "Zbiornik 2 w 1"
+        }
+      },
+      "filter_hours": {
+        "name": "Pozostałe godziny filtra"
+      },
+      "last_clean_area": {
+        "name": "Powierzchnia ostatniego sprzątania"
+      },
+      "last_clean_start": {
+        "name": "Początek ostatniego sprzątania"
+      },
+      "last_clean_time": {
+        "name": "Czas trwania ostatniego sprzątania"
+      },
+      "main_brush_hours": {
+        "name": "Pozostałe godziny głównej szczotki"
+      },
+      "mop_hours": {
+        "name": "Pozostałe godziny ściereczki mopującej"
+      },
+      "side_brush_hours": {
+        "name": "Pozostałe godziny bocznej szczotki"
       }
     },
     "select": {
@@ -248,6 +312,68 @@
           "name": "Pokoje",
           "description": "Lista ID pokojów do czyszczenia (z atrybutu \"rooms\" kamery mapy)."
         }
+      }
+    },
+    "refresh_map": {
+      "description": "Na krótko uruchamia odkurzacz, aby opuścił bazę i przesłał zaktualizowaną mapę, a następnie odsyła go z powrotem do bazy.",
+      "fields": {
+        "confirm_movement": {
+          "description": "Musi być true. Odkurzacz na krótko opuści bazę i wróci.",
+          "name": "Potwierdź ruch"
+        }
+      },
+      "name": "Odśwież mapę"
+    }
+  },
+  "issues": {
+    "oauth_missing": {
+      "fix_flow": {
+        "abort": {
+          "entry_gone": "Ten odkurzacz nie jest już skonfigurowany."
+        },
+        "error": {
+          "oauth_failed": "Uwierzytelnianie OAuth Xiaomi nie powiodło się. Rozpocznij łączenie ponownie i wklej nowy kod.",
+          "oauth_region_failed": "Nie udało się ustalić regionu OAuth Xiaomi na podstawie tego kodu."
+        },
+        "step": {
+          "link": {
+            "data": {
+              "code": "Kod OAuth"
+            },
+            "description": "Twój odkurzacz działa, ale mapa odświeża się wolno. Połącz OAuth Xiaomi, aby uzyskać mapę na żywo w czasie rzeczywistym (przez MQTT). Otwórz ten link, zatwierdź dostęp, a następnie wklej kod z paska adresu strony przekierowania (po 'CODE=' i przed '&'):\n\n{authorize_url}",
+            "title": "Połącz OAuth Xiaomi"
+          }
+        }
+      },
+      "title": "Włącz mapę na żywo w czasie rzeczywistym"
+    }
+  },
+  "options": {
+    "abort": {
+      "oauth_local_only": "Ten odkurzacz został dodany w trybie tylko lokalnym, więc nie ma sesji w chmurze Xiaomi, z którą można połączyć OAuth."
+    },
+    "error": {
+      "oauth_failed": "Uwierzytelnianie OAuth Xiaomi nie powiodło się. Spróbuj ponownie skorzystać z linku lub wklej kod ręcznie.",
+      "oauth_region_failed": "Nie udało się ustalić regionu OAuth Xiaomi na podstawie tego kodu."
+    },
+    "progress": {
+      "miot_oauth_auth": "Otwórz [Xiaomi OAuth]({authorize_url}) w nowej karcie. Po zatwierdzeniu Xiaomi powinno wrócić do Home Assistant, a ten krok będzie kontynuowany automatycznie."
+    },
+    "step": {
+      "miot_oauth_auth": {
+        "description": "Otwórz link OAuth Xiaomi. Home Assistant będzie kontynuować automatycznie po przekierowaniu przez Xiaomi.",
+        "title": "Połącz OAuth Xiaomi"
+      },
+      "miot_oauth_code": {
+        "data": {
+          "code": "Kod OAuth"
+        },
+        "description": "Automatyczne wywołanie zwrotne nie zostało zakończone. Otwórz ten link, zatwierdź dostęp, a następnie wklej kod z paska adresu strony przekierowania (po 'CODE=' i przed '&'):\n\n{authorize_url}",
+        "title": "Wklej kod OAuth Xiaomi"
+      },
+      "miot_oauth_finish": {
+        "description": "Uwierzytelnianie mapy w czasie rzeczywistym jest gotowe.",
+        "title": "OAuth Xiaomi połączone"
       }
     }
   }

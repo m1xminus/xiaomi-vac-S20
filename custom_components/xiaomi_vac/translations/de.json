@@ -53,11 +53,35 @@
           "username": "E-Mail, Telefonnummer oder Mi-Konto-ID",
           "password": "Passwort"
         }
+      },
+      "miot_oauth": {
+        "data": {
+          "enable_miot_oauth": "OAuth für Echtzeit-Kartenaktualisierungen aktivieren"
+        },
+        "description": "Optional. Dies bereitet den Live-MQTT-Kartenpfad vor. Überspringen Sie diesen Schritt, um das aktuelle Abfrageverhalten der Karte beizubehalten.",
+        "title": "Echtzeit-Kartenauthentifizierung aktivieren"
+      },
+      "miot_oauth_auth": {
+        "description": "Öffnen Sie den Xiaomi-OAuth-Link. Home Assistant wird automatisch fortfahren, nachdem Xiaomi zurückgeleitet hat.",
+        "title": "Xiaomi OAuth verknüpfen"
+      },
+      "miot_oauth_code": {
+        "data": {
+          "code": "OAuth-Code"
+        },
+        "description": "Der automatische Rückruf wurde nicht abgeschlossen. Öffnen Sie diesen Link, genehmigen Sie den Zugriff und fügen Sie dann den Code aus der Adressleiste der Weiterleitung ein (nach 'CODE=' und vor '&'):\n\n{authorize_url}",
+        "title": "Xiaomi-OAuth-Code einfügen"
+      },
+      "miot_oauth_finish": {
+        "description": "Die Echtzeit-Kartenauthentifizierung ist bereit.",
+        "title": "Xiaomi OAuth verknüpft"
       }
     },
     "error": {
       "unsupported_model": "Dieses Modell wird noch nicht unterstützt.",
-      "cannot_connect": "Der Staubsauger konnte unter dieser IP mit diesem Token nicht erreicht werden."
+      "cannot_connect": "Der Staubsauger konnte unter dieser IP mit diesem Token nicht erreicht werden.",
+      "oauth_failed": "Die Xiaomi-OAuth-Anmeldung ist fehlgeschlagen. Versuchen Sie den Link erneut oder fügen Sie den Code manuell ein.",
+      "oauth_region_failed": "Die Xiaomi-OAuth-Region konnte anhand dieses Codes nicht ermittelt werden."
     },
     "abort": {
       "already_configured": "Dieser Staubsauger ist bereits eingerichtet.",
@@ -66,6 +90,9 @@
       "login_verification_required": "Xiaomi hat diese Anmeldung blockiert und verlangt eine Kontoverifizierung. Melden Sie sich bei account.xiaomi.com (oder in der Xiaomi Home App) an, schließen Sie die geforderte Verifizierung ab und versuchen Sie es erneut.",
       "no_devices": "Keine unterstützten Staubsauger auf diesem Konto.",
       "unsupported_model": "Dieses Modell wird noch nicht unterstützt (nur ijai/Xiaomi-Marken-ijai-Staubsauger)."
+    },
+    "progress": {
+      "miot_oauth_auth": "Öffnen Sie [Xiaomi OAuth]({authorize_url}) in einem neuen Tab. Nach der Genehmigung sollte Xiaomi zu Home Assistant zurückkehren, und dieser Schritt wird automatisch fortgesetzt."
     }
   },
   "entity": {
@@ -106,6 +133,43 @@
       },
       "mop_life": {
         "name": "Wischmopp Lebensdauer"
+      },
+      "cloth_state": {
+        "name": "Wischtuch",
+        "state": {
+          "none": "Nicht angebracht",
+          "exist": "Angebracht"
+        }
+      },
+      "door_state": {
+        "name": "Staub-/Wassertank",
+        "state": {
+          "none": "Keiner",
+          "dust_box": "Staubbehälter",
+          "water_box": "Wassertank",
+          "two_in_one": "2-in-1-Tank"
+        }
+      },
+      "filter_hours": {
+        "name": "Verbleibende Filterstunden"
+      },
+      "last_clean_area": {
+        "name": "Fläche der letzten Reinigung"
+      },
+      "last_clean_start": {
+        "name": "Start der letzten Reinigung"
+      },
+      "last_clean_time": {
+        "name": "Dauer der letzten Reinigung"
+      },
+      "main_brush_hours": {
+        "name": "Verbleibende Stunden Hauptbürste"
+      },
+      "mop_hours": {
+        "name": "Verbleibende Stunden Wischtuch"
+      },
+      "side_brush_hours": {
+        "name": "Verbleibende Stunden Seitenbürste"
       }
     },
     "select": {
@@ -248,6 +312,68 @@
           "name": "Räume",
           "description": "Liste der Raum-IDs zum Reinigen (aus dem Attribut \"rooms\" der Karten-Kamera)."
         }
+      }
+    },
+    "refresh_map": {
+      "description": "Startet den Staubsauger kurz, damit er die Ladestation verlässt und eine aktuelle Karte hochlädt, und schickt ihn dann zurück zur Ladestation.",
+      "fields": {
+        "confirm_movement": {
+          "description": "Muss auf 'Wahr' gesetzt sein. Der Staubsauger verlässt kurz die Ladestation und kehrt zurück.",
+          "name": "Bewegung bestätigen"
+        }
+      },
+      "name": "Karte aktualisieren"
+    }
+  },
+  "issues": {
+    "oauth_missing": {
+      "fix_flow": {
+        "abort": {
+          "entry_gone": "Dieser Staubsauger ist nicht mehr eingerichtet."
+        },
+        "error": {
+          "oauth_failed": "Die Xiaomi-OAuth-Anmeldung ist fehlgeschlagen. Starten Sie die Verknüpfung erneut und fügen Sie den neuen Code ein.",
+          "oauth_region_failed": "Die Xiaomi-OAuth-Region konnte anhand dieses Codes nicht ermittelt werden."
+        },
+        "step": {
+          "link": {
+            "data": {
+              "code": "OAuth-Code"
+            },
+            "description": "Ihr Staubsauger funktioniert, aber die Karte wird nur langsam aktualisiert. Verknüpfen Sie Xiaomi OAuth, um die Echtzeit-Live-Karte (über MQTT) zu erhalten. Öffnen Sie diesen Link, genehmigen Sie den Zugriff und fügen Sie dann den Code aus der Adressleiste der Weiterleitung ein (nach 'CODE=' und vor '&'):\n\n{authorize_url}",
+            "title": "Xiaomi OAuth verknüpfen"
+          }
+        }
+      },
+      "title": "Echtzeit-Live-Karte aktivieren"
+    }
+  },
+  "options": {
+    "abort": {
+      "oauth_local_only": "Dieser Staubsauger wurde als „nur lokal“ hinzugefügt und hat daher keine Xiaomi-Cloud-Sitzung, mit der OAuth verknüpft werden könnte."
+    },
+    "error": {
+      "oauth_failed": "Die Xiaomi-OAuth-Anmeldung ist fehlgeschlagen. Versuchen Sie den Link erneut oder fügen Sie den Code manuell ein.",
+      "oauth_region_failed": "Die Xiaomi-OAuth-Region konnte anhand dieses Codes nicht ermittelt werden."
+    },
+    "progress": {
+      "miot_oauth_auth": "Öffnen Sie [Xiaomi OAuth]({authorize_url}) in einem neuen Tab. Nach der Genehmigung sollte Xiaomi zu Home Assistant zurückkehren, und dieser Schritt wird automatisch fortgesetzt."
+    },
+    "step": {
+      "miot_oauth_auth": {
+        "description": "Öffnen Sie den Xiaomi-OAuth-Link. Home Assistant wird automatisch fortfahren, nachdem Xiaomi zurückgeleitet hat.",
+        "title": "Xiaomi OAuth verknüpfen"
+      },
+      "miot_oauth_code": {
+        "data": {
+          "code": "OAuth-Code"
+        },
+        "description": "Der automatische Rückruf wurde nicht abgeschlossen. Öffnen Sie diesen Link, genehmigen Sie den Zugriff und fügen Sie dann den Code aus der Adressleiste der Weiterleitung ein (nach 'CODE=' und vor '&'):\n\n{authorize_url}",
+        "title": "Xiaomi-OAuth-Code einfügen"
+      },
+      "miot_oauth_finish": {
+        "description": "Die Echtzeit-Kartenauthentifizierung ist bereit.",
+        "title": "Xiaomi OAuth verknüpft"
       }
     }
   }

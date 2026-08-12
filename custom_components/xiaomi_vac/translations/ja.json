@@ -53,11 +53,35 @@
           "username": "メール、電話番号、またはMiアカウントID",
           "password": "パスワード"
         }
+      },
+      "miot_oauth": {
+        "data": {
+          "enable_miot_oauth": "リアルタイムマップ更新用のOAuthを有効にする"
+        },
+        "description": "任意。これによりライブMQTTマップの経路が準備されます。現在のポーリング方式のマップ動作を維持する場合はこの手順をスキップしてください。",
+        "title": "リアルタイムマップ認証を有効にする"
+      },
+      "miot_oauth_auth": {
+        "description": "Xiaomi OAuthリンクを開いてください。XiaomiからリダイレクトされるとHome Assistantが自動的に続行します。",
+        "title": "Xiaomi OAuthを連携する"
+      },
+      "miot_oauth_code": {
+        "data": {
+          "code": "OAuthコード"
+        },
+        "description": "自動コールバックが完了しませんでした。このリンクを開いてアクセスを承認し、リダイレクト先のアドレスバーからコードを貼り付けてください（'CODE='の後、'&'の前）：\n\n{authorize_url}",
+        "title": "Xiaomi OAuthコードを貼り付ける"
+      },
+      "miot_oauth_finish": {
+        "description": "リアルタイムマップ認証の準備ができました。",
+        "title": "Xiaomi OAuth連携済み"
       }
     },
     "error": {
       "unsupported_model": "このモデルはまだサポートされていません。",
-      "cannot_connect": "そのIPとトークンでロボット掃除機に到達できません。"
+      "cannot_connect": "そのIPとトークンでロボット掃除機に到達できません。",
+      "oauth_failed": "Xiaomi OAuth認証に失敗しました。リンクをもう一度お試しになるか、コードを手動で貼り付けてください。",
+      "oauth_region_failed": "そのコードからXiaomi OAuthのリージョンを特定できませんでした。"
     },
     "abort": {
       "already_configured": "このロボット掃除機はすでにセットアップされています。",
@@ -66,6 +90,9 @@
       "login_verification_required": "Xiaomiがこのサインインをブロックし、アカウントの確認を求めています。account.xiaomi.com（またはXiaomi Homeアプリ）でサインインし、求められた確認を完了してから、もう一度お試しください。",
       "no_devices": "このアカウントにはサポートされているロボット掃除機がありません。",
       "unsupported_model": "このモデルはまだサポートされていません（ijai/Xiaomi品のijai掃除機のみ）。"
+    },
+    "progress": {
+      "miot_oauth_auth": "新しいタブで[Xiaomi OAuth]({authorize_url})を開いてください。承認後、XiaomiがHome Assistantに戻り、この手順は自動的に続行されます。"
     }
   },
   "entity": {
@@ -106,6 +133,43 @@
       },
       "mop_life": {
         "name": "モップの寿命"
+      },
+      "cloth_state": {
+        "name": "モップ布",
+        "state": {
+          "none": "未装着",
+          "exist": "装着済み"
+        }
+      },
+      "door_state": {
+        "name": "ダスト/ウォータータンク",
+        "state": {
+          "none": "なし",
+          "dust_box": "ダストボックス",
+          "water_box": "ウォータータンク",
+          "two_in_one": "2-in-1タンク"
+        }
+      },
+      "filter_hours": {
+        "name": "フィルター残り時間"
+      },
+      "last_clean_area": {
+        "name": "前回清掃した面積"
+      },
+      "last_clean_start": {
+        "name": "前回清掃の開始時刻"
+      },
+      "last_clean_time": {
+        "name": "前回清掃の所要時間"
+      },
+      "main_brush_hours": {
+        "name": "メインブラシ残り時間"
+      },
+      "mop_hours": {
+        "name": "モップ布残り時間"
+      },
+      "side_brush_hours": {
+        "name": "サイドブラシ残り時間"
       }
     },
     "select": {
@@ -248,6 +312,68 @@
           "name": "部屋",
           "description": "清掃する部屋IDのリスト（マップカメラの\"rooms\"属性から）。"
         }
+      }
+    },
+    "refresh_map": {
+      "description": "掃除機を短時間起動してドックを離れ、新しいマップをアップロードした後、ドックに戻します。",
+      "fields": {
+        "confirm_movement": {
+          "description": "trueである必要があります。掃除機は短時間ドックを離れてから戻ります。",
+          "name": "動作を確認"
+        }
+      },
+      "name": "マップを更新"
+    }
+  },
+  "issues": {
+    "oauth_missing": {
+      "fix_flow": {
+        "abort": {
+          "entry_gone": "その掃除機は設定されていません。"
+        },
+        "error": {
+          "oauth_failed": "Xiaomi OAuth認証に失敗しました。連携をもう一度開始し、新しいコードを貼り付けてください。",
+          "oauth_region_failed": "そのコードからXiaomi OAuthのリージョンを特定できませんでした。"
+        },
+        "step": {
+          "link": {
+            "data": {
+              "code": "OAuthコード"
+            },
+            "description": "掃除機は動作していますが、マップの更新が遅くなっています。Xiaomi OAuthを連携してリアルタイム（MQTT）のライブマップを取得してください。このリンクを開いてアクセスを承認し、リダイレクト先のアドレスバーからコードを貼り付けてください（'CODE='の後、'&'の前）：\n\n{authorize_url}",
+            "title": "Xiaomi OAuthを連携する"
+          }
+        }
+      },
+      "title": "リアルタイムライブマップを有効にする"
+    }
+  },
+  "options": {
+    "abort": {
+      "oauth_local_only": "この掃除機はローカル専用で追加されているため、OAuthを連携できるXiaomiクラウドセッションがありません。"
+    },
+    "error": {
+      "oauth_failed": "Xiaomi OAuth認証に失敗しました。リンクをもう一度お試しになるか、コードを手動で貼り付けてください。",
+      "oauth_region_failed": "そのコードからXiaomi OAuthのリージョンを特定できませんでした。"
+    },
+    "progress": {
+      "miot_oauth_auth": "新しいタブで[Xiaomi OAuth]({authorize_url})を開いてください。承認後、XiaomiがHome Assistantに戻り、この手順は自動的に続行されます。"
+    },
+    "step": {
+      "miot_oauth_auth": {
+        "description": "Xiaomi OAuthリンクを開いてください。XiaomiからリダイレクトされるとHome Assistantが自動的に続行します。",
+        "title": "Xiaomi OAuthを連携する"
+      },
+      "miot_oauth_code": {
+        "data": {
+          "code": "OAuthコード"
+        },
+        "description": "自動コールバックが完了しませんでした。このリンクを開いてアクセスを承認し、リダイレクト先のアドレスバーからコードを貼り付けてください（'CODE='の後、'&'の前）：\n\n{authorize_url}",
+        "title": "Xiaomi OAuthコードを貼り付ける"
+      },
+      "miot_oauth_finish": {
+        "description": "リアルタイムマップ認証の準備ができました。",
+        "title": "Xiaomi OAuth連携済み"
       }
     }
   }

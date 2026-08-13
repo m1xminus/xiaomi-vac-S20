@@ -1228,13 +1228,17 @@ class XiaomiVacCard extends HTMLElement {
     // configured on the device itself, not something drawn by this card.
     // Each is a 4-point quad [x0,y0,x1,y1,x2,y2,x3,y3], not necessarily
     // axis-aligned, so render as a polygon rather than assuming a rectangle.
+    // pointer-events:none — purely a visual indicator layered on top of the
+    // rooms; without this it intercepts clicks meant for whatever room sits
+    // underneath it, exactly like the raster fill did before that got the
+    // same fix (see the .rmfill <image> above).
     const zonePoly = (pts) => pts.reduce((acc, v, i) =>
       i % 2 === 0 ? acc : `${acc}${tx(pts[i - 1])},${ty(v)} `, "").trim();
     (m.no_go || []).forEach((a) => {
-      s += `<polygon points="${zonePoly(a)}" fill="#f44336" fill-opacity="0.22" stroke="#f44336" stroke-width="0.05" stroke-dasharray="0.14 0.1"/>`;
+      s += `<polygon points="${zonePoly(a)}" fill="#f44336" fill-opacity="0.22" stroke="#f44336" stroke-width="0.05" stroke-dasharray="0.14 0.1" pointer-events="none"/>`;
     });
     (m.no_mop || []).forEach((a) => {
-      s += `<polygon points="${zonePoly(a)}" fill="#29b6f6" fill-opacity="0.22" stroke="#29b6f6" stroke-width="0.05" stroke-dasharray="0.14 0.1"/>`;
+      s += `<polygon points="${zonePoly(a)}" fill="#29b6f6" fill-opacity="0.22" stroke="#29b6f6" stroke-width="0.05" stroke-dasharray="0.14 0.1" pointer-events="none"/>`;
     });
     if (m.path && m.path.length > 1) {
       s += `<polyline points="${m.path.map(([x, y]) => `${tx(x)},${ty(y)}`).join(" ")}" fill="none" stroke="var(--xv-accent)" stroke-width="0.07" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>`;

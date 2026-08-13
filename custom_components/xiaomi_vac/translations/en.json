@@ -170,6 +170,9 @@
       "battery": {
         "name": "Battery"
       },
+      "fault": {
+        "name": "Fault code"
+      },
       "clean_area": {
         "name": "Clean area"
       },
@@ -187,6 +190,43 @@
       },
       "mop_life": {
         "name": "Mop life"
+      },
+      "cloth_state": {
+        "name": "Mop cloth",
+        "state": {
+          "none": "Not attached",
+          "exist": "Attached"
+        }
+      },
+      "door_state": {
+        "name": "Dust/water tank",
+        "state": {
+          "none": "None",
+          "dust_box": "Dust box",
+          "water_box": "Water tank",
+          "two_in_one": "2-in-1 tank"
+        }
+      },
+      "filter_hours": {
+        "name": "Filter hours remaining"
+      },
+      "last_clean_area": {
+        "name": "Last clean area"
+      },
+      "last_clean_start": {
+        "name": "Last clean started"
+      },
+      "last_clean_time": {
+        "name": "Last clean duration"
+      },
+      "main_brush_hours": {
+        "name": "Main brush hours remaining"
+      },
+      "mop_hours": {
+        "name": "Mop hours remaining"
+      },
+      "side_brush_hours": {
+        "name": "Side brush hours remaining"
       }
     },
     "select": {

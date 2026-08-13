@@ -116,6 +116,9 @@
       "battery": {
         "name": "电池"
       },
+      "fault": {
+        "name": "故障代码"
+      },
       "clean_area": {
         "name": "清扫面积"
       },

@@ -170,6 +170,9 @@
       "battery": {
         "name": "Baterija"
       },
+      "fault": {
+        "name": "Kod greške"
+      },
       "clean_area": {
         "name": "Očišćena površina"
       },

@@ -170,6 +170,9 @@
       "battery": {
         "name": "Battery"
       },
+      "fault": {
+        "name": "Fault code"
+      },
       "clean_area": {
         "name": "Clean area"
       },

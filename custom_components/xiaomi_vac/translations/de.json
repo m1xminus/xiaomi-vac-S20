@@ -116,6 +116,9 @@
       "battery": {
         "name": "Akku"
       },
+      "fault": {
+        "name": "Fehlercode"
+      },
       "clean_area": {
         "name": "Gereinigt Fläche"
       },

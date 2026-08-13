@@ -116,6 +116,9 @@
       "battery": {
         "name": "バッテリー"
       },
+      "fault": {
+        "name": "エラーコード"
+      },
       "clean_area": {
         "name": "清掃面積"
       },

@@ -116,6 +116,9 @@
       "battery": {
         "name": "Batterij"
       },
+      "fault": {
+        "name": "Foutcode"
+      },
       "clean_area": {
         "name": "Schoongemaakt oppervlak"
       },

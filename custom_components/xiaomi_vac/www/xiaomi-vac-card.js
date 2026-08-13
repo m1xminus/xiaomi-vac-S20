@@ -1223,6 +1223,19 @@ class XiaomiVacCard extends HTMLElement {
     (m.walls || []).forEach((w) => {
       s += `<line x1="${tx(w[0])}" y1="${ty(w[1])}" x2="${tx(w[2])}" y2="${ty(w[3])}" stroke="var(--xv-muted)" stroke-width="0.05" stroke-linecap="round" stroke-dasharray="0.16 0.13" opacity=".35"/>`;
     });
+    // No-go zones (device won't enter at all) and no-mop zones (device won't
+    // wet-mop here, e.g. rugs) — both come straight from what's already
+    // configured on the device itself, not something drawn by this card.
+    // Each is a 4-point quad [x0,y0,x1,y1,x2,y2,x3,y3], not necessarily
+    // axis-aligned, so render as a polygon rather than assuming a rectangle.
+    const zonePoly = (pts) => pts.reduce((acc, v, i) =>
+      i % 2 === 0 ? acc : `${acc}${tx(pts[i - 1])},${ty(v)} `, "").trim();
+    (m.no_go || []).forEach((a) => {
+      s += `<polygon points="${zonePoly(a)}" fill="#f44336" fill-opacity="0.22" stroke="#f44336" stroke-width="0.05" stroke-dasharray="0.14 0.1"/>`;
+    });
+    (m.no_mop || []).forEach((a) => {
+      s += `<polygon points="${zonePoly(a)}" fill="#29b6f6" fill-opacity="0.22" stroke="#29b6f6" stroke-width="0.05" stroke-dasharray="0.14 0.1"/>`;
+    });
     if (m.path && m.path.length > 1) {
       s += `<polyline points="${m.path.map(([x, y]) => `${tx(x)},${ty(y)}`).join(" ")}" fill="none" stroke="var(--xv-accent)" stroke-width="0.07" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>`;
     }

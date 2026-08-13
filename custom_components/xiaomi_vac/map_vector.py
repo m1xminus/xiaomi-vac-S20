@@ -281,6 +281,15 @@ def vector_map(md: Any, unpacked: bytes, *, ijai_grid: bool = True) -> dict[str,
     ]
     out["walls"] = [[w.x0, w.y0, w.x1, w.y1] for w in (md.walls or [])]
     out["no_go"] = [a.as_list() for a in (md.no_go_areas or [])]
+    # No-mop zones, same source as no-go zones (both come from the device's
+    # virtualWalls data, distinguished only by type) — genuinely available
+    # for this device, confirmed against the actual protobuf schema.
+    # Carpet zones are NOT included here: checked the raw protobuf directly,
+    # the only carpet-related field anywhere in it is a single calibration
+    # offset (angle+distance for the mop-lift mechanism) - there's no zone
+    # geometry for carpets transmitted by this device at all, so there's
+    # nothing real to draw.
+    out["no_mop"] = [a.as_list() for a in (md.no_mopping_areas or [])]
     out["no_mop"] = [a.as_list() for a in (md.no_mopping_areas or [])]
     out["zones"] = [[z.x0, z.y0, z.x1, z.y1] for z in (md.zones or [])]
     out["vacuum_room"] = md.vacuum_room

@@ -58,6 +58,22 @@ _ALL_SENSORS: tuple[XiaomiSensorDescription, ...] = (
         supported_fn=lambda p: p.core is not None and p.core.battery is not None,
     ),
     XiaomiSensorDescription(
+        # Raw code only — deliberately NOT device_class=ENUM. The public
+        # MIoT spec documents this as a bare uint32 (0-3000) with no named
+        # value list at all, and there's no reliable, complete mapping
+        # available anywhere for this device (checked; even similar
+        # devices' community-tracked code lists are openly incomplete).
+        # Community reports for a related device family show codes in
+        # this same numeric range can be ordinary status-adjacent events
+        # (e.g. charging/fully-charged) rather than real faults, so showing
+        # a plausible-sounding decoded name would risk being actively
+        # misleading. Showing the honest raw number lets it be checked
+        # directly against what the Xiaomi app displays.
+        key="fault", translation_key="fault",
+        entity_category=EntityCategory.DIAGNOSTIC, value_fn=lambda s: s.fault,
+        supported_fn=lambda p: p.core is not None and p.core.fault is not None,
+    ),
+    XiaomiSensorDescription(
         key="main_brush_life", translation_key="main_brush_life",
         native_unit_of_measurement=PERCENTAGE, entity_category=EntityCategory.DIAGNOSTIC,
         state_class=SensorStateClass.MEASUREMENT, value_fn=lambda s: s.main_brush_life,

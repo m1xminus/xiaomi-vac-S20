@@ -116,6 +116,9 @@
       "battery": {
         "name": "Bateria"
       },
+      "fault": {
+        "name": "Código de erro"
+      },
       "clean_area": {
         "name": "Área limpa"
       },
@@ -133,6 +136,43 @@
       },
       "mop_life": {
         "name": "Vida útil do pano de limpeza"
+      },
+      "cloth_state": {
+        "name": "Pano de limpeza",
+        "state": {
+          "none": "Não instalado",
+          "exist": "Instalado"
+        }
+      },
+      "door_state": {
+        "name": "Reservatório de pó/água",
+        "state": {
+          "none": "Nenhum",
+          "dust_box": "Reservatório de pó",
+          "water_box": "Reservatório de água",
+          "two_in_one": "Reservatório 2 em 1"
+        }
+      },
+      "filter_hours": {
+        "name": "Horas restantes do filtro"
+      },
+      "last_clean_area": {
+        "name": "Área da última limpeza"
+      },
+      "last_clean_start": {
+        "name": "Início da última limpeza"
+      },
+      "last_clean_time": {
+        "name": "Duração da última limpeza"
+      },
+      "main_brush_hours": {
+        "name": "Horas restantes da escova principal"
+      },
+      "mop_hours": {
+        "name": "Horas restantes do pano de limpeza"
+      },
+      "side_brush_hours": {
+        "name": "Horas restantes da escova lateral"
       }
     },
     "select": {

@@ -116,6 +116,9 @@
       "battery": {
         "name": "Batería"
       },
+      "fault": {
+        "name": "Código de error"
+      },
       "clean_area": {
         "name": "Área limpiada"
       },

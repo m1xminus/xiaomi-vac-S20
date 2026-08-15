@@ -902,6 +902,21 @@ IJAI_V17 = ModelProfile(
         clean_room_mode=Prop(7, 25),
         clean_room_oper=Prop(7, 26),
         set_room_clean=Action(7, 3, in_piids=(24, 25, 26)),
+        # get-preference-ii (aiid=10) and set-preference-ii (aiid=9) — confirmed
+        # directly against this exact model's own published MIoT spec
+        # (home.miot-spec.com/spec/ijai.vacuum.v17): both actions genuinely
+        # exist on this hardware ("get-preference-ii... includes selection
+        # parameter" / "set-preference... with selection info"), just never
+        # wired up in this profile before. Without these, room-clean
+        # preferences (which room(s) are "chosen") can never be read or
+        # written, so both the card's room-selection flow and the
+        # resume/start button's "continue what's chosen" logic have nothing
+        # to work with and silently fall back to a full-home clean instead -
+        # this is what was actually happening, confirmed from this model's
+        # own debug log ("has no get-preference action"), not assumed.
+        # Same siid/aiid/piid pattern as the already-working S20 profile.
+        get_preference=Action(7, 10),
+        set_preference=Action(7, 9),
     ),
     schedule=ScheduleCapability(
         service=8,

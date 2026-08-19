@@ -677,10 +677,14 @@ class XiaomiVacCard extends HTMLElement {
     }
   }
   // Rebuilding the track resets the DOM; never do it mid-swipe (it would yank the
-  // carousel). Defer to the next settle, and keep the user on their current page.
+  // carousel) or mid-room-tap (it would yank the element the person is touching).
+  // Defer to the next settle, and keep the user on their current page.
   _rebuild() {
     const track = this._root && this._root.querySelector(".track");
-    if (this._down || (track && track.classList.contains("anim"))) { this._pendingRebuild = true; return; }
+    if (this._down || this._roomTouchDown || (track && track.classList.contains("anim"))) {
+      this._pendingRebuild = true;
+      return;
+    }
     this._buildPages(true);
   }
 
@@ -969,6 +973,29 @@ class XiaomiVacCard extends HTMLElement {
       r.onkeydown = (e) => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
       };
+      // A map refresh landing mid-tap can rebuild this exact element out from
+      // under an in-flight click, silently swallowing it — the map poll runs
+      // on its own timer, independent of any gesture, and on hardware whose
+      // map data changes often (some models re-decrypt/refresh far more
+      // frequently than others) this window gets hit often enough that a
+      // room tap can need 2-3 attempts before one lands clean. Same fix
+      // _rebuild() already applies to the carousel swipe, just extended to
+      // also cover a room tap in progress rather than just a drag.
+      r.addEventListener("pointerdown", () => { this._roomTouchDown = true; });
+      const release = () => {
+        this._roomTouchDown = false;
+        if (this._pendingRebuild) {
+          // Defer past this same gesture's own upcoming click — pointerup
+          // fires before click for the same interaction, so rebuilding
+          // immediately here would destroy the element before ITS OWN click
+          // gets to fire, recreating the exact bug this exists to prevent.
+          setTimeout(() => {
+            if (this._pendingRebuild) { this._pendingRebuild = false; this._buildPages(true); }
+          }, 0);
+        }
+      };
+      r.addEventListener("pointerup", release);
+      r.addEventListener("pointercancel", release);
     });
   }
   _setX(anim) {

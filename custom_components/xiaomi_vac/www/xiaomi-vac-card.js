@@ -1267,8 +1267,18 @@ class XiaomiVacCard extends HTMLElement {
     (m.no_mop || []).forEach((a) => {
       s += `<polygon points="${zonePoly(a)}" fill="#29b6f6" fill-opacity="0.22" stroke="#29b6f6" stroke-width="0.05" stroke-dasharray="0.14 0.1" pointer-events="none"/>`;
     });
+    // pointer-events:none — purely the visual "where it's been" trace, same
+    // reasoning as the raster fill and the no-go/no-mop zones above: without
+    // this, the stroke itself intercepts clicks anywhere it's drawn. A
+    // lightly-cleaned room barely notices, but a heavily-covered one (lots
+    // of overlapping back-and-forth passes) can end up with the path's
+    // stroke covering most of the room's visible area, leaving almost
+    // nothing left to tap — confirmed as a real, reported problem, not
+    // theoretical. The path stays visually on top exactly as before; only
+    // its ability to catch clicks is removed, so a tap always reaches the
+    // room underneath regardless of where the path happens to run.
     if (m.path && m.path.length > 1) {
-      s += `<polyline points="${m.path.map(([x, y]) => `${tx(x)},${ty(y)}`).join(" ")}" fill="none" stroke="var(--xv-accent)" stroke-width="0.07" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>`;
+      s += `<polyline points="${m.path.map(([x, y]) => `${tx(x)},${ty(y)}`).join(" ")}" fill="none" stroke="var(--xv-accent)" stroke-width="0.07" stroke-linecap="round" stroke-linejoin="round" opacity=".9" pointer-events="none"/>`;
     }
     if (this._enabled("show_room_labels")) rooms.forEach((r) => {
       if (r.cx == null || !r.name) return;

@@ -116,6 +116,9 @@
       "battery": {
         "name": "电池"
       },
+      "rooms_selected": {
+        "name": "已选择的房间"
+      },
       "fault": {
         "name": "故障代码"
       },

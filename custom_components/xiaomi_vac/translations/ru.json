@@ -116,6 +116,9 @@
       "battery": {
         "name": "Батарея"
       },
+      "rooms_selected": {
+        "name": "Выбранные комнаты"
+      },
       "fault": {
         "name": "Код ошибки"
       },

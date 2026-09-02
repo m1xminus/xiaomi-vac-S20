@@ -170,6 +170,9 @@
       "battery": {
         "name": "Baterija"
       },
+      "rooms_selected": {
+        "name": "Izabrane sobe"
+      },
       "fault": {
         "name": "Kod greške"
       },

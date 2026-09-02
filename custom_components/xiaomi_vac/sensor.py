@@ -199,7 +199,19 @@ async def async_setup_entry(
 ) -> None:
     coordinator = entry.runtime_data.control
     sensors = build_sensors(coordinator.device.profile)
-    async_add_entities(XiaomiVacuumSensor(coordinator, entry, d) for d in sensors)
+    entities: list[SensorEntity] = [
+        XiaomiVacuumSensor(coordinator, entry, d) for d in sensors
+    ]
+    # Selected-rooms sensor rides the MAP coordinator, not the control one:
+    # the chosen-rooms state is read as part of that coordinator's own poll
+    # cycle (see map_coordinator._apply_chosen_rooms), so there's no extra
+    # device round-trip for this — it's data already being fetched and
+    # merged, just never exposed as an entity before. Only added when a map
+    # coordinator actually exists (cloud session configured); local-only
+    # setups have no source for it.
+    if entry.runtime_data.map is not None:
+        entities.append(XiaomiSelectedRoomsSensor(entry.runtime_data.map, entry))
+    async_add_entities(entities)
 
 
 class XiaomiVacuumSensor(CoordinatorEntity[XiaomiVacuumCoordinator], SensorEntity):
@@ -216,3 +228,70 @@ class XiaomiVacuumSensor(CoordinatorEntity[XiaomiVacuumCoordinator], SensorEntit
     @property
     def native_value(self) -> int | str | datetime | None:
         return self.entity_description.value_fn(self.coordinator.data)
+
+
+class XiaomiSelectedRoomsSensor(SensorEntity):
+    """How many rooms are currently marked for cleaning on the device.
+
+    State is the COUNT (a stable, always-valid number that's easy to use in
+    automations and triggers); the room names and ids go in attributes,
+    since names can be arbitrarily long and HA truncates state strings at
+    255 characters — a long enough room list would silently corrupt the
+    state value if it lived there.
+
+    Sourced from the device itself (not from any card-side selection), so
+    it reflects what's genuinely chosen on the vacuum regardless of whether
+    the selection was made from this card, the Mi Home app, or persisted
+    from an earlier session.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "rooms_selected"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:select-group"
+
+    def __init__(self, map_coordinator, entry) -> None:
+        self._map = map_coordinator
+        base = entry.unique_id or entry.entry_id
+        self._attr_unique_id = f"{base}_rooms_selected"
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, base)})
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(self._map.async_add_listener(self.async_write_ha_state))
+
+    def _rooms(self) -> list[dict]:
+        data = getattr(self._map, "data", None)
+        vector = getattr(data, "vector", None)
+        if not isinstance(vector, dict):
+            return []
+        rooms = vector.get("rooms")
+        return rooms if isinstance(rooms, list) else []
+
+    @property
+    def available(self) -> bool:
+        return self._map.last_update_success
+
+    @property
+    def native_value(self) -> int | None:
+        rooms = self._rooms()
+        # Distinguish "nothing is selected" (0) from "we couldn't read the
+        # selection at all" (None/unknown). _apply_chosen_rooms returns early
+        # without tagging anything if the read fails, so a room list where NO
+        # room carries a 'chosen' key means unknown, not empty — reporting 0
+        # there would look like a real "no rooms selected" answer and could
+        # drive an automation on data we never actually got.
+        if not any("chosen" in r for r in rooms):
+            return None
+        return sum(1 for r in rooms if r.get("chosen"))
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        rooms = self._rooms()
+        if not any("chosen" in r for r in rooms):
+            return {}
+        chosen = [r for r in rooms if r.get("chosen")]
+        return {
+            "rooms": [r.get("name") or f"Room {r.get('id')}" for r in chosen],
+            "room_ids": [r.get("id") for r in chosen],
+        }

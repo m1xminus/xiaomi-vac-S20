@@ -116,6 +116,9 @@
       "battery": {
         "name": "Batterij"
       },
+      "rooms_selected": {
+        "name": "Geselecteerde kamers"
+      },
       "fault": {
         "name": "Foutcode"
       },

@@ -116,6 +116,9 @@
       "battery": {
         "name": "Akku"
       },
+      "rooms_selected": {
+        "name": "Ausgewählte Räume"
+      },
       "fault": {
         "name": "Fehlercode"
       },

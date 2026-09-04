@@ -104,6 +104,221 @@ presets:
   - name: Vacuum & Mop Allowed Rooms
     script: script.vacuum_and_mop_living_kitchen
 ```
+## Custom Scripts - Used as Presets
+
+# Building Custom Clean Scripts
+
+This guide shows how to build Home Assistant scripts that clean specific rooms with specific settings — for example "vacuum and mop the kitchen and hallway on strong suction", triggered from a dashboard button, a voice assistant, or an automation.
+
+No external tools needed. Everything here uses services provided by this integration.
+
+---
+
+## Before you start: find your room IDs
+
+Every room on your vacuum's map has a numeric ID. These are assigned by the vacuum, not by you, and they're what the scripts refer to.
+
+**The easiest way to find them:**
+
+1. Go to **Developer Tools → States**
+2. Find your map camera entity (something like `camera.your_vacuum_map`)
+3. Look at its `rooms` attribute
+
+You'll see a list like:
+
+```yaml
+rooms:
+  - id: 10
+    name: Living Room
+  - id: 11
+    name: Kitchen
+  - id: 12
+    name: Hallway
+```
+
+Write down the IDs for the rooms you care about. They stay stable unless you re-map your home or split/merge rooms in the Xiaomi app.
+
+> **Note:** These are *map* room IDs, which are not the same as the room names you may have assigned in the Mi Home app's own room list. Always use the IDs from the camera attribute above.
+
+---
+
+## The basic pattern
+
+Every custom clean script follows the same two steps:
+
+1. **`apply_room_preferences`** — tell the vacuum *which* rooms to clean and *how* to clean each one
+2. **`clean_segment`** — tell it to start
+
+These are separate because the vacuum stores the "how" as per-room settings first, then acts on them. A short delay between the two lets the settings commit before cleaning starts.
+
+### Minimal example
+
+```yaml
+alias: Clean Kitchen
+mode: single
+sequence:
+  - action: xiaomi_vac.apply_room_preferences
+    target:
+      entity_id: vacuum.your_vacuum
+    data:
+      active_rooms:
+        - room_id: 11
+          clean_mode: 1
+          wind_power: 2
+          water_level: 2
+  - delay:
+      milliseconds: 1000
+  - action: xiaomi_vac.clean_segment
+    target:
+      entity_id: vacuum.your_vacuum
+    data:
+      segments: [11]
+```
+
+This cleans room 11 (the kitchen) in sweep + mop mode, strong suction, water level 2.
+
+---
+
+## What each part means
+
+### `entity_id`
+
+Your vacuum entity — find it under **Settings → Devices & Services → Xiaomi Vacuum**. It looks like `vacuum.something`. It's the same in both steps.
+
+### `active_rooms`
+
+The list of rooms to clean, each with its own settings. This is the important one to understand:
+
+- **Rooms you list here are marked active** for the next clean.
+- **Rooms you *don't* list are marked inactive** — they get skipped.
+- **Their saved settings are not erased**, just deactivated. Your other scripts still work exactly as configured.
+
+This means you never need to "clear" a previous selection. Listing the rooms you want is enough.
+
+### `room_id`
+
+The numeric room ID from the camera attribute. Use plain numbers, not quoted strings — `room_id: 11`, not `room_id: '11'`.
+
+### `delay`
+
+One second between applying settings and starting. This isn't cosmetic — the vacuum needs a moment to commit the settings before the clean command lands. Without it, the clean can start using the *previous* settings.
+
+### `segments`
+
+The list of room IDs to actually clean. **This should match the rooms you listed in `active_rooms`.**
+
+```yaml
+segments: [10, 11, 12]
+```
+
+> **Important:** Never pass an empty list. On this hardware, an empty room list is interpreted as "clean everything" rather than "clean nothing" — the integration will refuse an empty list rather than let that happen silently, but it's worth knowing why.
+
+---
+
+## Settings reference
+
+All settings are optional. **Any setting you leave out keeps whatever that room already had saved** — it does not reset to a default.
+
+### `clean_mode`
+
+| Value | Meaning |
+|-------|---------|
+| `0` | Sweep (vacuum only) |
+| `1` | Sweep + Mop (at the same time) |
+| `2` | Mop only |
+| `3` | Sweep, then Mop (two passes) |
+
+### `wind_power` (suction)
+
+| Value | Meaning |
+|-------|---------|
+| `0` | Silent |
+| `1` | Basic |
+| `2` | Strong |
+| `3` | Full Speed |
+
+### `water_level`
+
+| Value | Meaning |
+|-------|---------|
+| `0` | Off / none |
+| `1` | Low |
+| `2` | Medium |
+| `3` | High |
+
+Only relevant in modes that use water (`1`, `2`, `3`).
+
+### `twice_clean`
+
+| Value | Meaning |
+|-------|---------|
+| `0` | Single pass |
+| `1` | Clean each room twice |
+
+### `carpet`
+
+| Value | Meaning |
+|-------|---------|
+| `0` | Not set |
+| `1` | Auto carpet boost |
+| `2` | Off |
+
+---
+
+## Full example: multiple rooms
+
+```yaml
+alias: Custom Clean - Vacuum & Mop (Living, Kitchen, Hall, WC)
+description: ''
+mode: single
+sequence:
+  - action: xiaomi_vac.apply_room_preferences
+    target:
+      entity_id: vacuum.your_vacuum
+    data:
+      active_rooms:
+        - room_id: 10
+          clean_mode: 1
+          wind_power: 2
+          water_level: 2
+        - room_id: 14
+          clean_mode: 1
+          wind_power: 2
+          water_level: 2
+        - room_id: 15
+          clean_mode: 1
+          wind_power: 2
+          water_level: 2
+        - room_id: 16
+          clean_mode: 1
+          wind_power: 2
+          water_level: 2
+  - delay:
+      milliseconds: 1000
+  - action: xiaomi_vac.clean_segment
+    target:
+      entity_id: vacuum.your_vacuum
+    data:
+      segments: [10, 14, 15, 16]
+```
+
+### Different settings per room
+
+Each room is independent — you can mix and match freely:
+
+```yaml
+active_rooms:
+  # Kitchen: mop heavily
+  - room_id: 11
+    clean_mode: 1
+    wind_power: 2
+    water_level: 3
+  # Bedroom: quiet, no water (carpet)
+  - room_id: 12
+    clean_mode: 0
+    wind_power: 0
+    water_level: 0
+```
 
 ---
 

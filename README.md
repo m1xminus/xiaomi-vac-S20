@@ -76,8 +76,158 @@ The integration includes an upgraded version of `xiaomi-vac-card` with full supp
   <img src="https://github.com/user-attachments/assets/7beffb7d-cdc1-49a9-a853-5003c68f8f39" alt="Detailed Sensors View" width="400" />
 </div>
 
+## 📱 Live Cleaning Notifications (Android)
 
-### Standard Dashboard Configuration
+Get a live, updating Android notification while the vacuum cleans — current
+status, selected rooms, area covered, and battery — plus a finished summary
+with total duration and area cleaned once it's back on the dock.
+<div align="center">
+  <img width="300" height="120" alt="Livenotification3" src="https://github.com/user-attachments/assets/54965e23-d464-43cd-b694-2117493b0ac9" />
+  <img width="300" height="120" alt="Livenotification2" src="https://github.com/user-attachments/assets/d53e7fb4-5f04-473a-a2c1-502457282b0c" />
+  <img width="300" height="120" alt="Livenotification" src="https://github.com/user-attachments/assets/698ad1ac-7316-4c81-8869-312a81842fac" />
+</div>
+
+<div align="center">
+  <!-- add screenshots / GIF here -->
+</div>
+
+### Requirements
+
+- Home Assistant Companion App on Android (this uses `chronometer` and
+  `progress` notification fields that are Android-only — this exact style of
+  live notification isn't available on iOS)
+- Integration version **1.2.8 or newer** — the finished summary reads the
+  `last_completed_clean_duration` / `last_completed_clean_area` sensors
+  added in that release
+- The `rooms_selected` sensor (added automatically once a map coordinator is
+  configured)
+
+### Example automation
+
+Replace `vacuum.your_vacuum_entity_id` and the sensor entity IDs below with
+your own, and list your own `notify.mobile_app_*` targets under `phones`.
+`expected_minutes` only drives the progress-bar percentage — set it to
+roughly how long an average clean takes for you.
+
+```yaml
+alias: Vacuum - Live cleaning notification (Android)
+description: ''
+triggers:
+  - trigger: state
+    entity_id: vacuum.your_vacuum_entity_id
+    to: cleaning
+actions:
+  - variables:
+      start_ts: '{{ as_timestamp(now()) | int }}'
+  - repeat:
+      for_each: '{{ phones }}'
+      sequence:
+        - action: '{{ repeat.item }}'
+          data:
+            title: 🧹 Cleaning started
+            message: Updating room details…
+            data:
+              tag: vacuum_clean_live
+              sticky: true
+              notification_icon: mdi:robot-vacuum
+              chronometer: true
+              when: '{{ start_ts }}'
+              progress: 0
+              progress_max: 100
+  - repeat:
+      while:
+        - condition: template
+          value_template: >-
+            {{ states('vacuum.your_vacuum_entity_id') in ['cleaning', 'returning',
+            'paused'] }}
+        - condition: template
+          value_template: '{{ repeat.index < 240 }}'
+      sequence:
+        - repeat:
+            for_each: '{{ phones }}'
+            sequence:
+              - action: '{{ repeat.item }}'
+                data:
+                  title: >-
+                    {% set s = states('vacuum.your_vacuum_entity_id') %} {{ '🧹
+                    Cleaning' if s == 'cleaning'
+                       else '⏸️ Paused' if s == 'paused'
+                       else '🔙 Returning to dock' }}
+                  message: >-
+                    {% set r = state_attr('sensor.your_vacuum_rooms_selected',
+                    'rooms') %}
+                    Rooms: {{ r | join(', ') if r and r | length > 0 else 'Whole
+                    house' }}
+                    Area: {{ states('sensor.your_vacuum_clean_area') }} m²  ·
+                    Battery: {{ states('sensor.your_vacuum_battery') }}%
+                  data:
+                    tag: vacuum_clean_live
+                    alert_once: true
+                    sticky: true
+                    notification_icon: mdi:robot-vacuum
+                    chronometer: true
+                    when: '{{ start_ts }}'
+                    progress_max: 100
+                    progress: |-
+                      {{ [ ((states('sensor.your_vacuum_clean_time') | int(0))
+                           / expected_minutes * 100) | round(0) | int, 100 ] | min }}
+        - delay:
+            seconds: 30
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: vacuum.your_vacuum_entity_id
+            state: docked
+        sequence:
+          - repeat:
+              for_each: '{{ phones }}'
+              sequence:
+                - action: '{{ repeat.item }}'
+                  data:
+                    title: ✅ Cleaning finished
+                    message: >-
+                      {% set r =
+                      state_attr('sensor.your_vacuum_rooms_selected', 'rooms')
+                      %}
+                      {% set dur =
+                      states('sensor.your_vacuum_last_completed_clean_duration') %}
+                      {% set area =
+                      states('sensor.your_vacuum_last_completed_clean_area') %}
+                      Rooms: {{ r | join(', ') if r and r | length > 0 else
+                      'Whole house' }}
+                      Duration: {{ dur ~ ' min' if dur not in
+                      ['unknown','unavailable','none'] else '—' }}
+                      Area cleaned: {{ area ~ ' m²' if area not in
+                      ['unknown','unavailable','none'] else '—' }}
+                    data:
+                      tag: vacuum_clean_live
+                      sticky: false
+                      notification_icon: mdi:check-circle
+                      progress: -1
+    default:
+      - repeat:
+          for_each: '{{ phones }}'
+          sequence:
+            - action: '{{ repeat.item }}'
+              data:
+                title: ⚠️ Cleaning stopped
+                message: >-
+                  Stopped before docking — state is {{
+                  states('vacuum.your_vacuum_entity_id') }}
+                data:
+                  tag: vacuum_clean_live
+                  sticky: false
+                  notification_icon: mdi:alert
+                  progress: -1
+mode: restart
+variables:
+  phones:
+    - notify.mobile_app_your_phone_1
+    - notify.mobile_app_your_phone_2
+  expected_minutes: 60
+```
+
+## Standard Dashboard Configuration
 
 Add this configuration to your Lovelace dashboard (replace entity names with your device's actual entity IDs):
 

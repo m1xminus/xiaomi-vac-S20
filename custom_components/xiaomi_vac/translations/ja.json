@@ -176,6 +176,15 @@
       },
       "side_brush_hours": {
         "name": "サイドブラシ残り時間"
+      },
+      "last_completed_clean_duration": {
+        "name": "直近の完了清掃の所要時間"
+      },
+      "last_completed_clean_area": {
+        "name": "直近の完了清掃の面積"
+      },
+      "last_completed_clean_end": {
+        "name": "直近の完了清掃の終了時刻"
       }
     },
     "select": {

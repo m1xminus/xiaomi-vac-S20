@@ -15,7 +15,9 @@ from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfArea, UnitOfTi
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from . import XiaomiConfigEntry
 from .const import DOMAIN
@@ -202,6 +204,22 @@ async def async_setup_entry(
     entities: list[SensorEntity] = [
         XiaomiVacuumSensor(coordinator, entry, d) for d in sensors
     ]
+    # Last-completed-clean trio (duration/area/finished-at), gated on the
+    # same live_clean_time/live_clean_area capability as the "clean_time"/
+    # "clean_area" live sensors above — those are exactly what the
+    # coordinator snapshots on the returning->docked edge (see
+    # coordinator.py), so a profile without them has nothing to snapshot.
+    ch = coordinator.device.profile.clean_history
+    if (
+        ch is not None
+        and getattr(ch, "live_clean_time", None) is not None
+        and getattr(ch, "live_clean_area", None) is not None
+    ):
+        entities.extend([
+            XiaomiLastCompletedCleanDurationSensor(coordinator, entry, "last_completed_clean_duration"),
+            XiaomiLastCompletedCleanAreaSensor(coordinator, entry, "last_completed_clean_area"),
+            XiaomiLastCompletedCleanEndSensor(coordinator, entry, "last_completed_clean_end"),
+        ])
     # Selected-rooms sensor rides the MAP coordinator, not the control one:
     # the chosen-rooms state is read as part of that coordinator's own poll
     # cycle (see map_coordinator._apply_chosen_rooms), so there's no extra
@@ -228,6 +246,82 @@ class XiaomiVacuumSensor(CoordinatorEntity[XiaomiVacuumCoordinator], SensorEntit
     @property
     def native_value(self) -> int | str | datetime | None:
         return self.entity_description.value_fn(self.coordinator.data)
+
+
+class _XiaomiLastCompletedCleanBase(CoordinatorEntity[XiaomiVacuumCoordinator], RestoreEntity, SensorEntity):
+    """Shared plumbing for the three last-completed-clean sensors.
+
+    Unlike XiaomiVacuumSensor above, these are NOT wired through
+    VacuumStatus/value_fn — their value is state the COORDINATOR carries
+    across polls (see coordinator.py), captured once on the 'returning' ->
+    'docked' edge, not something re-derived fresh from every single poll.
+    A coordinator reload (HA restart, config entry reload) starts with none
+    of that history, so RestoreEntity is used to bring back the last known
+    value from HA's own state storage until the next real clean completes.
+    """
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _source_attr: str = ""  # set by subclass: attribute name on the coordinator
+
+    def __init__(self, coordinator: XiaomiVacuumCoordinator, entry, key: str) -> None:
+        super().__init__(coordinator)
+        base = entry.unique_id or entry.entry_id
+        self._attr_unique_id = f"{base}_{key}"
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, base)})
+        self._restored_value: int | datetime | None = None
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if getattr(self.coordinator, self._source_attr) is not None:
+            return  # coordinator already captured a real value this session
+        last_state = await self.async_get_last_state()
+        if last_state is None or last_state.state in ("unknown", "unavailable"):
+            return
+        self._restored_value = self._parse_restored(last_state.state)
+
+    def _parse_restored(self, raw: str) -> int | datetime | None:
+        raise NotImplementedError
+
+    @property
+    def native_value(self) -> int | datetime | None:
+        value = getattr(self.coordinator, self._source_attr)
+        return value if value is not None else self._restored_value
+
+
+class XiaomiLastCompletedCleanDurationSensor(_XiaomiLastCompletedCleanBase):
+    _attr_translation_key = "last_completed_clean_duration"
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _source_attr = "last_completed_clean_duration"
+
+    def _parse_restored(self, raw: str) -> int | None:
+        try:
+            return int(float(raw))
+        except (TypeError, ValueError):
+            return None
+
+
+class XiaomiLastCompletedCleanAreaSensor(_XiaomiLastCompletedCleanBase):
+    _attr_translation_key = "last_completed_clean_area"
+    _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _source_attr = "last_completed_clean_area"
+
+    def _parse_restored(self, raw: str) -> int | None:
+        try:
+            return int(float(raw))
+        except (TypeError, ValueError):
+            return None
+
+
+class XiaomiLastCompletedCleanEndSensor(_XiaomiLastCompletedCleanBase):
+    _attr_translation_key = "last_completed_clean_end"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _source_attr = "last_completed_clean_end"
+
+    def _parse_restored(self, raw: str) -> datetime | None:
+        return dt_util.parse_datetime(raw)
 
 
 class XiaomiSelectedRoomsSensor(SensorEntity):

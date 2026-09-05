@@ -176,6 +176,15 @@
       },
       "side_brush_hours": {
         "name": "Resterende uren zijborstel"
+      },
+      "last_completed_clean_duration": {
+        "name": "Duur laatste voltooide schoonmaakbeurt"
+      },
+      "last_completed_clean_area": {
+        "name": "Oppervlakte laatste voltooide schoonmaakbeurt"
+      },
+      "last_completed_clean_end": {
+        "name": "Laatste voltooide schoonmaakbeurt beëindigd"
       }
     },
     "select": {

@@ -176,6 +176,15 @@
       },
       "side_brush_hours": {
         "name": "Heures restantes de la brosse latérale"
+      },
+      "last_completed_clean_duration": {
+        "name": "Durée du dernier nettoyage terminé"
+      },
+      "last_completed_clean_area": {
+        "name": "Surface du dernier nettoyage terminé"
+      },
+      "last_completed_clean_end": {
+        "name": "Fin du dernier nettoyage terminé"
       }
     },
     "select": {

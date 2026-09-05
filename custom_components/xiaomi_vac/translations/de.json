@@ -176,6 +176,15 @@
       },
       "side_brush_hours": {
         "name": "Verbleibende Stunden Seitenbürste"
+      },
+      "last_completed_clean_duration": {
+        "name": "Letzte abgeschlossene Reinigung – Dauer"
+      },
+      "last_completed_clean_area": {
+        "name": "Letzte abgeschlossene Reinigung – Fläche"
+      },
+      "last_completed_clean_end": {
+        "name": "Letzte abgeschlossene Reinigung beendet"
       }
     },
     "select": {

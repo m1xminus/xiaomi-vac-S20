@@ -176,6 +176,15 @@
       },
       "side_brush_hours": {
         "name": "边刷剩余使用时间"
+      },
+      "last_completed_clean_duration": {
+        "name": "上次完成清扫的时长"
+      },
+      "last_completed_clean_area": {
+        "name": "上次完成清扫的面积"
+      },
+      "last_completed_clean_end": {
+        "name": "上次清扫完成时间"
       }
     },
     "select": {

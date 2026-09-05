@@ -176,6 +176,15 @@
       },
       "side_brush_hours": {
         "name": "Ore residue spazzola laterale"
+      },
+      "last_completed_clean_duration": {
+        "name": "Durata dell'ultima pulizia completata"
+      },
+      "last_completed_clean_area": {
+        "name": "Area dell'ultima pulizia completata"
+      },
+      "last_completed_clean_end": {
+        "name": "Ultima pulizia completata terminata"
       }
     },
     "select": {

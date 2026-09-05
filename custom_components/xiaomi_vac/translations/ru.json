@@ -176,6 +176,15 @@
       },
       "side_brush_hours": {
         "name": "Остаток ресурса боковой щётки (часы)"
+      },
+      "last_completed_clean_duration": {
+        "name": "Длительность последней завершённой уборки"
+      },
+      "last_completed_clean_area": {
+        "name": "Площадь последней завершённой уборки"
+      },
+      "last_completed_clean_end": {
+        "name": "Последняя завершённая уборка окончена"
       }
     },
     "select": {

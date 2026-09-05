@@ -230,6 +230,15 @@
       },
       "side_brush_hours": {
         "name": "Side brush hours remaining"
+      },
+      "last_completed_clean_duration": {
+        "name": "Last completed clean duration"
+      },
+      "last_completed_clean_area": {
+        "name": "Last completed clean area"
+      },
+      "last_completed_clean_end": {
+        "name": "Last completed clean finished"
       }
     },
     "select": {

@@ -176,6 +176,15 @@
       },
       "side_brush_hours": {
         "name": "Horas restantes del cepillo lateral"
+      },
+      "last_completed_clean_duration": {
+        "name": "Duración de la última limpieza completada"
+      },
+      "last_completed_clean_area": {
+        "name": "Área de la última limpieza completada"
+      },
+      "last_completed_clean_end": {
+        "name": "Última limpieza completada finalizada"
       }
     },
     "select": {

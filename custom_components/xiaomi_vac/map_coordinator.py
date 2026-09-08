@@ -158,9 +158,22 @@ class XiaomiMapCoordinator(DataUpdateCoordinator[MapResult]):
             _LOGGER.debug("MQTT curMapId=%s — scheduling map refresh", self._mqtt_active_id)
             self._schedule_mqtt_refresh(request_upload=True)
         elif msg.kind == "event" and msg.siid == _SIID_MAP and msg.eiid == _EIID_MAP_UPLOAD:
+            # This event (10/6, "test-upload-map") IS the device telling us it
+            # just uploaded a fresh map. Calling request_map_upload() here too
+            # asks it to upload again right after it already said it did -
+            # confirmed via debug log to reliably fail (both the primary
+            # upload_by_mapid_ii action and its upload_by_mapid fallback time
+            # out with miio -9999 "user ack timeout") while cleaning, every
+            # throttle cycle, on an ijai C101EU. It's also unnecessary: the
+            # subsequent async_refresh() below already picks up the just-
+            # uploaded map via the normal fetch path regardless of whether
+            # this call succeeds - that's the best-effort try/except in
+            # async_request_map_upload(). Only request an upload for the
+            # curMapId-change case above, where we're asking for a specific
+            # map we have no freshness confirmation for yet.
             _LOGGER.debug("MQTT map upload event — scheduling map refresh")
             self._notify_mqtt_upload_waiters()
-            self._schedule_mqtt_refresh(request_upload=True)
+            self._schedule_mqtt_refresh(request_upload=False)
 
     def _new_mqtt_upload_waiter(self) -> asyncio.Future[None]:
         waiter: asyncio.Future[None] = self.hass.loop.create_future()
